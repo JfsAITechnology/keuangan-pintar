@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#0f172a">
+<meta name="theme-color" content="#0f172a">\n<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">\n<meta http-equiv="Pragma" content="no-cache">\n<meta http-equiv="Expires" content="0">
 <link rel="manifest" href="./manifest.webmanifest">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -32,7 +32,7 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
 
 <div id="appView" class="hidden min-h-screen">
 <header class="sticky top-0 z-30 glass border-b"><div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center"><div class="flex items-center gap-3"><img src="assets/jfs-ai-robot.svg.png?v=2" alt="JFS AI Technology" class="w-12 h-auto object-contain shrink-0"><div><b>Keuangan Pintar</b><div class="text-[11px] text-slate-500">JFS AI Finance</div></div></div><div class="flex items-center gap-2"><button id="scopeBtn" onclick="toggleScope()" class="text-xs font-bold px-3 py-2 rounded-xl bg-slate-100">Personal</button><button onclick="signOut()" class="text-xs font-bold px-3 py-2 rounded-xl text-slate-500">Keluar</button></div></div></header>
-<main class="max-w-6xl mx-auto px-4 py-5 pb-24">
+<main class="max-w-6xl mx-auto px-4 py-5 pb-24">\n<div id="appStatus" class="hidden mb-4 rounded-2xl border p-4 text-sm"></div>
 <div class="flex justify-between items-end mb-5"><div><p class="text-sm text-slate-500">Ringkasan</p><h1 class="text-2xl font-black">Dashboard</h1></div><span id="monthLabel" class="text-xs bg-white border px-3 py-1.5 rounded-full"></span></div>
 <section class="grid md:grid-cols-3 gap-3 mb-5"><div class="bg-slate-900 text-white rounded-3xl p-5"><div class="text-sm text-slate-300">Saldo</div><div id="balance" class="text-3xl font-black mt-3">Rp0</div><div class="text-xs text-slate-400 mt-2">Pemasukan − pengeluaran bulan berjalan</div></div><div class="bg-white rounded-3xl p-5 border shadow-sm"><div class="text-sm text-slate-500">Pemasukan</div><div id="income" class="text-2xl font-black text-emerald-600 mt-3">Rp0</div></div><div class="bg-white rounded-3xl p-5 border shadow-sm"><div class="text-sm text-slate-500">Pengeluaran</div><div id="expense" class="text-2xl font-black text-red-600 mt-3">Rp0</div></div></section>
 <section class="grid sm:grid-cols-3 gap-3 mb-6"><button onclick="openScanner()" class="p-4 rounded-2xl bg-blue-600 text-white text-left shadow-sm"><b>📷 Scan Struk (AI)</b><div class="text-xs text-blue-100 mt-1">OCR → parsing → kategori</div></button><button onclick="openEntry('income')" class="p-4 rounded-2xl bg-white border text-left"><b>💵 Tambah Pemasukan</b><div class="text-xs text-slate-500 mt-1">Tanggal otomatis hari ini</div></button><button onclick="openEntry('expense')" class="p-4 rounded-2xl bg-white border text-left"><b>🧾 Tambah Pengeluaran</b><div class="text-xs text-slate-500 mt-1">Tanggal otomatis hari ini</div></button></section>
@@ -58,39 +58,143 @@ const SUPABASE_URL="https://evtkeyfjgqwarsmlzrkh.supabase.co";
 const SUPABASE_KEY="sb_publishable_7lGio_RVVgkVASYYyBHQIg_GvL-8ELD";
 const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{global:{fetch:(url,options={})=>fetch(url,{...options,cache:"no-store"})}});
 const cats={income:["Gaji Bulanan","Uang Tak Terduga","Penjualan / Usaha"],expense:["Belanja Keperluan Rumah Bulanan","Stok Bahan Mentah","Tagihan & Utilitas","Servis & Perbaikan","Lain-lain"]};
-let authMode="login",scope=localStorage.getItem("kp_scope")||"personal",entryType="expense",transactions=[],chart;
+let authMode="login",scope=["personal","business"].includes(localStorage.getItem("kp_scope"))?localStorage.getItem("kp_scope"):"personal",entryType="expense",transactions=[],chart;
+let appReadyUserId=null,appInitUserId=null,appInitPromise=null;
 const rupiah=n=>new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n)||0);
 const dateFmt=s=>new Intl.DateTimeFormat("id-ID",{day:"numeric",month:"short",year:"numeric"}).format(new Date(s+"T00:00:00"));
 const monthYearFmt=s=>new Intl.DateTimeFormat("id-ID",{month:"long",year:"numeric"}).format(new Date(s+"T00:00:00"));
 const todayISO=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+const nextMonthISO=()=>{const d=new Date();const n=new Date(d.getFullYear(),d.getMonth()+1,1);return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0")};
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
-function setAuthMode(m){authMode=m;document.getElementById("nameWrap").classList.toggle("hidden",m==="login");document.getElementById("loginTab").className=m==="login"?"flex-1 py-2 rounded-lg bg-white font-bold text-sm":"flex-1 py-2 rounded-lg text-slate-500 font-bold text-sm";document.getElementById("signupTab").className=m==="signup"?"flex-1 py-2 rounded-lg bg-white font-bold text-sm":"flex-1 py-2 rounded-lg text-slate-500 font-bold text-sm";document.getElementById("authSubmit").textContent=m==="login"?"Masuk":"Buat Akun";document.getElementById("authMsg").textContent=""}
-async function authSubmit(e){e.preventDefault();const email=authEmail.value.trim(),password=authPassword.value,name=authName.value.trim();authMsg.textContent="Memproses...";let r;if(authMode==="login")r=await sb.auth.signInWithPassword({email,password});else r=await sb.auth.signUp({email,password,options:{data:{display_name:name}}});if(r.error){authMsg.textContent=r.error.message;authMsg.className="text-sm mt-4 text-center text-red-600";return}if(authMode==="signup"&&!r.data.session){authMsg.textContent="Akun dibuat. Jika konfirmasi email aktif, cek email lalu masuk.";authMsg.className="text-sm mt-4 text-center text-emerald-600";return}showApp(r.data.session.user)}
+const isValidISODate=s=>/^\d{4}-\d{2}-\d{2}$/.test(String(s))&&!Number.isNaN(new Date(String(s)+"T00:00:00").getTime());
+function setAppStatus(message,kind="info"){
+ const el=document.getElementById("appStatus"); if(!el)return;
+ if(!message){el.className="hidden mb-4 rounded-2xl border p-4 text-sm";el.textContent="";return}
+ const styles={error:"bg-red-50 border-red-200 text-red-700",warn:"bg-amber-50 border-amber-200 text-amber-800",success:"bg-emerald-50 border-emerald-200 text-emerald-700",info:"bg-blue-50 border-blue-200 text-blue-700"};
+ el.className="mb-4 rounded-2xl border p-4 text-sm "+(styles[kind]||styles.info);el.textContent=message;
+}
+function setAuthMode(m){authMode=m;document.getElementById("nameWrap").classList.toggle("hidden",m==="login");document.getElementById("loginTab").className=m==="login"?"flex-1 py-2 rounded-lg bg-white font-bold text-sm":"flex-1 py-2 rounded-lg text-slate-500 font-bold text-sm";document.getElementById("signupTab").className=m==="signup"?"flex-1 py-2 rounded-lg bg-white font-bold text-sm":"flex-1 py-2 rounded-lg text-slate-500 font-bold text-sm";document.getElementById("authSubmit").textContent=m==="login"?"Masuk":"Buat Akun";document.getElementById("authMsg").textContent="";document.getElementById("authMsg").className="text-sm mt-4 text-center text-slate-500"}
+async function authSubmit(e){
+ e.preventDefault();
+ const email=authEmail.value.trim(),password=authPassword.value,name=authName.value.trim();
+ if(!email||!password)return;
+ authMsg.textContent="Memproses...";authMsg.className="text-sm mt-4 text-center text-slate-500";
+ try{
+  const r=authMode==="login"
+   ?await sb.auth.signInWithPassword({email,password})
+   :await sb.auth.signUp({email,password,options:{data:{display_name:name}}});
+  if(r.error)throw r.error;
+  if(authMode==="signup"&&!r.data.session){authMsg.textContent="Akun dibuat. Jika konfirmasi email aktif, cek email lalu masuk.";authMsg.className="text-sm mt-4 text-center text-emerald-600";return}
+  if(!r.data.user)throw new Error("Akun tidak dikembalikan oleh layanan autentikasi.");
+  await showApp(r.data.user);
+ }catch(err){console.error("Auth gagal:",err);authMsg.textContent=err.message||"Gagal memproses autentikasi.";authMsg.className="text-sm mt-4 text-center text-red-600"}
+}
 document.getElementById("authForm").addEventListener("submit",authSubmit);
-function showApp(user){document.getElementById("authView").classList.add("hidden");document.getElementById("appView").classList.remove("hidden");updateScopeUI();loadTransactions();ensureProfile(user)}
-async function ensureProfile(user){await sb.from("kp_profiles").upsert({user_id:user.id,display_name:user.user_metadata?.display_name||user.email,default_scope:scope},{onConflict:"user_id"})}
-async function signOut(){await sb.auth.signOut();location.reload()}
+async function showApp(user){
+ if(!user)return;
+ if(user.is_anonymous){await sb.auth.signOut();location.reload();return}
+ document.getElementById("authView").classList.add("hidden");
+ document.getElementById("appView").classList.remove("hidden");
+ updateScopeUI();
+ if(appReadyUserId===user.id)return;
+ if(appInitUserId===user.id&&appInitPromise)return appInitPromise;
+ appInitUserId=user.id;
+ appInitPromise=(async()=>{await ensureProfile(user);await loadTransactions()})();
+ try{await appInitPromise;appReadyUserId=user.id}
+ finally{if(appInitUserId===user.id){appInitPromise=null}}
+}
+async function ensureProfile(user){
+ const {error}=await sb.from("kp_profiles").upsert({user_id:user.id,display_name:user.user_metadata?.display_name||user.email,default_scope:scope},{onConflict:"user_id"});
+ if(error){console.error("Profil gagal disinkronkan:",error);setAppStatus("Profil pengguna belum tersimpan. Data transaksi tetap bisa digunakan.","warn")}
+}
+async function signOut(){try{await sb.auth.signOut()}finally{appReadyUserId=null;appInitUserId=null;appInitPromise=null;location.reload()}}
 function toggleScope(){scope=scope==="personal"?"business":"personal";localStorage.setItem("kp_scope",scope);updateScopeUI();loadTransactions()}
-function updateScopeUI(){document.getElementById("scopeBtn").textContent=scope==="personal"?"Personal":"Bisnis";document.getElementById("chartScope").textContent=scope==="personal"?"Personal":"Bisnis";document.getElementById("entryScopeLabel").textContent=scope==="personal"?"Personal":"Bisnis";document.getElementById("monthLabel").textContent=new Intl.DateTimeFormat("id-ID",{month:"long",year:"numeric"}).format(new Date())}
-async function loadTransactions(){const {data:{user}}=await sb.auth.getUser();if(!user){transactions=[];render();return}const {data,error}=await sb.from("kp_transactions").select("*").eq("user_id",user.id).eq("scope",scope).order("transaction_date",{ascending:false}).order("created_at",{ascending:false}).limit(500);if(error){console.error("Gagal memuat transaksi:",error);const el=document.getElementById("transactions");el.innerHTML='<div class="bg-red-50 border border-red-200 rounded-3xl p-5 text-sm text-red-700"><b>Gagal memuat transaksi.</b><div class="mt-1">'+esc(error.message)+'</div><button onclick="loadTransactions()" class="mt-3 px-3 py-2 rounded-xl bg-red-600 text-white font-bold">Coba lagi</button></div>';return}transactions=data||[];render()}
-function render(){const currentMonth=todayISO().slice(0,7);const monthTx=transactions.filter(x=>String(x.transaction_date||"").slice(0,7)===currentMonth);let inc=monthTx.filter(x=>x.type==="income").reduce((a,x)=>a+Number(x.amount),0),exp=monthTx.filter(x=>x.type==="expense").reduce((a,x)=>a+Number(x.amount),0);balance.textContent=rupiah(inc-exp);income.textContent=rupiah(inc);expense.textContent=rupiah(exp);transactionsEl(monthTx);renderDailyBreakdown(monthTx);renderChart(monthTx)}
+function updateScopeUI(){document.getElementById("scopeBtn").textContent=scope==="personal"?"Personal":"Bisnis";document.getElementById("chartScope").textContent=scope==="personal"?"Personal":"Bisnis";document.getElementById("entryScopeLabel").textContent=scope==="personal"?"Personal":"Bisnis";document.getElementById("monthLabel").textContent=monthYearFmt(todayISO())}
+async function loadTransactions(){
+ const {data:{user},error:authError}=await sb.auth.getUser();
+ if(authError)throw authError;
+ if(!user||user.is_anonymous){transactions=[];render();setAppStatus("Sesi login tidak valid. Silakan masuk kembali.","error");return false}
+ const start=todayISO().slice(0,7)+"-01",next=nextMonthISO();
+ let rows=[],from=0;
+ while(true){
+  const {data,error}=await sb.from("kp_transactions").select("*").eq("user_id",user.id).eq("scope",scope).gte("transaction_date",start).lt("transaction_date",next).order("transaction_date",{ascending:false}).order("created_at",{ascending:false}).range(from,from+999);
+  if(error){console.error("Gagal memuat transaksi:",error);transactions=[];render();setAppStatus("Data transaksi gagal dimuat: "+error.message,"error");return false}
+  rows.push(...(data||[]));
+  if((data||[]).length<1000)break;
+  from+=1000;
+ }
+ transactions=rows;render();if(!document.getElementById("appStatus")?.textContent)setAppStatus("",null);return true;
+}
+function render(){
+ const currentMonth=todayISO().slice(0,7);
+ const monthTx=transactions.filter(x=>String(x.transaction_date||"").slice(0,7)===currentMonth);
+ let inc=monthTx.filter(x=>x.type==="income").reduce((a,x)=>a+Number(x.amount),0),exp=monthTx.filter(x=>x.type==="expense").reduce((a,x)=>a+Number(x.amount),0);
+ balance.textContent=rupiah(inc-exp);income.textContent=rupiah(inc);expense.textContent=rupiah(exp);transactionsEl(monthTx);renderDailyBreakdown(monthTx);renderChart(monthTx);
+}
 function transactionsEl(monthTx){const el=document.getElementById("transactions");if(!monthTx.length){el.innerHTML='<div class="bg-white border rounded-3xl p-8 text-center text-sm text-slate-500">Belum ada transaksi pada bulan ini.</div>';return}el.innerHTML=monthTx.map(x=>{let plus=x.type==="income";return '<div class="bg-white border rounded-2xl p-4 flex items-center gap-3"><div class="w-11 h-11 rounded-xl grid place-items-center '+(plus?"bg-emerald-50 text-emerald-600":"bg-red-50 text-red-600")+'">'+(plus?"↗":"↘")+'</div><div class="min-w-0 flex-1"><div class="font-bold truncate">'+esc(x.merchant||x.description||x.category)+'</div><div class="flex gap-2 items-center mt-1 flex-wrap"><span class="text-[11px] bg-slate-100 px-2 py-1 rounded-lg">'+esc(x.category)+'</span><span class="text-[11px] text-slate-400">'+dateFmt(x.transaction_date)+'</span>'+(x.source!=="manual"?'<span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded-lg">AI</span>':"")+'</div></div><div class="font-black whitespace-nowrap '+(plus?"text-emerald-600":"text-red-600")+'">'+(plus?"+":"-")+rupiah(x.amount)+'</div></div>'}).join("")}
 function renderDailyBreakdown(monthTx){const el=document.getElementById("dailyBreakdown");const map={};monthTx.forEach(x=>{const d=x.transaction_date;if(!map[d])map[d]={income:0,expense:0};if(x.type==="income")map[d].income+=Number(x.amount);else map[d].expense+=Number(x.amount)});const days=Object.keys(map).sort((a,b)=>b.localeCompare(a));if(!days.length){el.innerHTML='<div class="p-5 rounded-2xl bg-slate-50 text-sm text-slate-500 text-center">Belum ada transaksi bulan ini.</div>';return}el.innerHTML=days.map(d=>{const v=map[d];return '<div class="border rounded-2xl p-4"><div class="font-bold">'+dateFmt(d)+'</div><div class="grid grid-cols-2 gap-2 mt-2"><div class="rounded-xl bg-emerald-50 p-3"><div class="text-[11px] text-emerald-700">Pemasukan</div><div class="font-black text-emerald-700">'+rupiah(v.income)+'</div></div><div class="rounded-xl bg-red-50 p-3"><div class="text-[11px] text-red-700">Pengeluaran</div><div class="font-black text-red-700">'+rupiah(v.expense)+'</div></div></div></div>'}).join("")}
-function renderChart(monthTx){const map={};monthTx.filter(x=>x.type==="expense").forEach(x=>map[x.category]=(map[x.category]||0)+Number(x.amount));if(chart)chart.destroy();chart=new Chart(document.getElementById("chart"),{type:"doughnut",data:{labels:Object.keys(map).length?Object.keys(map):["Belum ada data"],datasets:[{data:Object.values(map).length?Object.values(map):[1],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:"68%",plugins:{legend:{position:"bottom",labels:{usePointStyle:true,padding:14,font:{size:11}}},tooltip:{callbacks:{label:c=>c.label+": "+rupiah(c.raw)}}}}})}
+function renderChart(monthTx){
+ const holder=document.getElementById("chart")?.parentElement;
+ if(!holder)return;
+ if(typeof Chart==="undefined"){holder.innerHTML='<div class="h-64 grid place-items-center rounded-2xl bg-amber-50 text-amber-800 text-sm p-5 text-center">Grafik belum tersedia karena layanan Chart.js tidak berhasil dimuat. Ringkasan dan transaksi tetap berfungsi.</div>';return}
+ const map={};monthTx.filter(x=>x.type==="expense").forEach(x=>map[x.category]=(map[x.category]||0)+Number(x.amount));
+ if(chart)chart.destroy();
+ chart=new Chart(document.getElementById("chart"),{type:"doughnut",data:{labels:Object.keys(map).length?Object.keys(map):["Belum ada data"],datasets:[{data:Object.values(map).length?Object.values(map):[1],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:"68%",plugins:{legend:{position:"bottom",labels:{usePointStyle:true,padding:14,font:{size:11}}},tooltip:{callbacks:{label:c=>c.label+": "+rupiah(c.raw)}}}}})
+}
 function openEntry(t){entryType=t;entryTypeInput.value=t;document.getElementById("entryModal").classList.remove("hidden");document.getElementById("entryModal").classList.add("flex");const now=todayISO();entryDate.value=now;document.getElementById("entryDateDisplay").textContent=dateFmt(now);entryAmount.value="";entryMerchant.value="";entryDescription.value="";setEntryType(t)}
 function closeModal(id){document.getElementById(id).classList.add("hidden");document.getElementById(id).classList.remove("flex")}
 function setEntryType(t){entryType=t;entryTypeInput.value=t;document.getElementById("incomeBtn").className=t==="income"?"py-3 rounded-xl border border-emerald-500 bg-emerald-50 text-emerald-700 font-bold":"py-3 rounded-xl border font-bold";document.getElementById("expenseBtn").className=t==="expense"?"py-3 rounded-xl border border-red-500 bg-red-50 text-red-700 font-bold":"py-3 rounded-xl border font-bold";entryCategory.innerHTML=cats[t].map(x=>"<option>"+esc(x)+"</option>").join("")}
 document.getElementById("entryAmount").addEventListener("input",e=>{let n=e.target.value.replace(/\D/g,"");e.target.value=n?Number(n).toLocaleString("id-ID"):""});
 document.getElementById("entryForm").addEventListener("submit",async e=>{e.preventDefault();const submit=e.currentTarget.querySelector('button[type="submit"]');if(submit.disabled)return;let amount=Number(entryAmount.value.replace(/\D/g,""));if(!amount)return alert("Masukkan jumlah.");const transactionDate=todayISO();entryDate.value=transactionDate;const {data:{user},error:authError}=await sb.auth.getUser();if(authError||!user)return alert("Sesi login sudah tidak aktif. Silakan masuk lagi.");submit.disabled=true;submit.textContent="Menyimpan...";try{const payload={user_id:user.id,scope,type:entryType,amount,category:entryCategory.value,merchant:entryMerchant.value.trim()||null,transaction_date:transactionDate,description:entryDescription.value.trim()||null,source:"manual"};const {data,error}=await sb.from("kp_transactions").insert(payload).select("*").single();if(error)throw error;if(!data)throw new Error("Transaksi tidak dikembalikan oleh database.");transactions=[data,...transactions.filter(x=>x.id!==data.id)];render();closeModal("entryModal");await loadTransactions()}catch(error){console.error("Gagal menyimpan transaksi:",error);alert("Transaksi gagal disimpan: "+error.message)}finally{submit.disabled=false;submit.textContent="Simpan"}});
 function openScanner(){document.getElementById("scannerModal").classList.remove("hidden");document.getElementById("scannerModal").classList.add("flex");document.getElementById("scanStatus").classList.add("hidden");document.getElementById("ocrResult").classList.add("hidden")}
-document.getElementById("receipt").addEventListener("change",async e=>{const file=e.target.files[0];if(!file)return;const st=document.getElementById("scanStatus");st.classList.remove("hidden");st.innerHTML="<b>🤖 AI membaca struk...</b><div class='text-xs text-slate-500 mt-1'>OCR sedang mengenali teks. Proses dapat memerlukan beberapa detik.</div>";try{const result=await Tesseract.recognize(file,"ind",{logger:m=>{if(m.status==="recognizing text")st.innerHTML="<b>🤖 AI membaca struk...</b><div class='text-xs text-slate-500 mt-1'>Progress "+Math.round((m.progress||0)*100)+"%</div>"}});const text=result.data.text||"";const parsed=parseReceipt(text);showOCR(parsed,text)}catch(err){console.error(err);st.innerHTML="<span class='text-red-600 font-bold'>OCR gagal. Silakan gunakan input manual.</span>"}});
-function parseReceipt(text){const clean=text.replace(/\s+/g," ").trim();let nums=[...clean.matchAll(/(?:Rp\.?\s*)?([0-9][0-9.,]{2,})/gi)].map(m=>Number(m[1].replace(/\./g,"").replace(/,(\d{2})$/,".$1").replace(/,/g,""))).filter(n=>n>1000&&n<100000000);let amount=nums.length?Math.max(...nums):0;let lower=clean.toLowerCase();let category=lower.includes("listrik")||lower.includes("pln")||lower.includes("internet")?"Tagihan & Utilitas":lower.includes("sabun")||lower.includes("shampoo")||lower.includes("bahan")?"Stok Bahan Mentah":"Belanja Keperluan Rumah Bulanan";let merchant=(clean.split(" ").slice(0,8).join(" ")||"Merchant dari struk");let dm=clean.match(/(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})/);let date=todayISO();if(dm){let y=dm[3].length===2?"20"+dm[3]:dm[3];date=y+"-"+dm[2].padStart(2,"0")+"-"+dm[1].padStart(2,"0")}return{type:"expense",amount,category,merchant,date,confidence:amount?0.86:0.45,text:clean}}
+document.getElementById("receipt").addEventListener("change",async e=>{
+ const file=e.target.files[0];if(!file)return;
+ const st=document.getElementById("scanStatus");st.classList.remove("hidden");
+ if(typeof Tesseract==="undefined"){st.innerHTML="<span class='text-red-600 font-bold'>Mesin OCR belum termuat. Gunakan input manual.</span>";return}
+ if(file.size>10*1024*1024){st.innerHTML="<span class='text-red-600 font-bold'>Ukuran foto terlalu besar. Maksimal 10 MB.</span>";return}
+ st.innerHTML="<b>🤖 AI membaca struk...</b><div class='text-xs text-slate-500 mt-1'>OCR sedang mengenali teks.</div>";
+ try{
+  const result=await Tesseract.recognize(file,"ind",{logger:m=>{if(m.status==="recognizing text")st.innerHTML="<b>🤖 AI membaca struk...</b><div class='text-xs text-slate-500 mt-1'>Progress "+Math.round((m.progress||0)*100)+"%</div>"}});
+  const text=result.data.text||"";const parsed=parseReceipt(text);showOCR(parsed,text)
+ }catch(err){console.error("OCR gagal:",err);st.innerHTML="<span class='text-red-600 font-bold'>OCR gagal. Silakan gunakan input manual.</span>"}
+});
+function parseAmountCandidate(raw){
+ const s=String(raw||"").replace(/[^0-9.,-]/g,"");if(!s)return 0;
+ const lastDot=s.lastIndexOf("."),lastComma=s.lastIndexOf(",");
+ let normalized=s;
+ if(lastComma>lastDot){
+  const decimals=s.length-lastComma-1;normalized=decimals===2?s.replace(/\./g,"").replace(",","."):s.replace(/,/g,"");
+ }else normalized=s.replace(/,/g,"");
+ const n=Number(normalized);return Number.isFinite(n)?Math.round(n):0;
+}
+function parseReceipt(text){
+ const clean=text.replace(/\s+/g," ").trim(),lower=clean.toLowerCase();
+ const labeled=[...clean.matchAll(/(?:total|grand total|jumlah|bayar|amount due|total bayar)[^0-9]{0,30}(?:rp\.?\s*)?([0-9][0-9.,]{2,})/gi)].map(m=>parseAmountCandidate(m[1])).filter(n=>n>1000&&n<=1000000000000000);
+ const allNums=[...clean.matchAll(/(?:rp\.?\s*)?([0-9][0-9.,]{2,})/gi)].map(m=>parseAmountCandidate(m[1])).filter(n=>n>1000&&n<=1000000000000000);
+ const amount=(labeled.length?Math.max(...labeled):0)||(allNums.length?Math.max(...allNums):0);
+ const category=lower.includes("listrik")||lower.includes("pln")||lower.includes("internet")?"Tagihan & Utilitas":lower.includes("sabun")||lower.includes("shampoo")||lower.includes("bahan")?"Stok Bahan Mentah":"Belanja Keperluan Rumah Bulanan";
+ const merchant=clean.split(" ").slice(0,8).join(" ")||"Merchant dari struk";
+ const dm=clean.match(/(?:tanggal|tgl)?\s*(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})/i);
+ let date=todayISO();
+ if(dm){const y=dm[3].length===2?"20"+dm[3]:dm[3],candidate=y+"-"+dm[2].padStart(2,"0")+"-"+dm[1].padStart(2,"0");if(isValidISODate(candidate))date=candidate}
+ return{type:"expense",amount,category,merchant,date,confidence:amount?0.86:0.45,text:clean}
+}
 function showOCR(p,raw){currentOCR=p;const el=document.getElementById("ocrResult");el.classList.remove("hidden");el.innerHTML='<div class="p-4 rounded-2xl bg-slate-50 space-y-3"><div class="flex justify-between"><b>Hasil AI</b><span class="text-xs bg-emerald-50 text-emerald-600 px-2 py-1 rounded-lg">Confidence '+Math.round(p.confidence*100)+'%</span></div><div><span class="text-xs text-slate-500">Merchant</span><div class="font-bold">'+esc(p.merchant)+'</div></div><div><span class="text-xs text-slate-500">Nominal</span><div class="text-xl font-black">'+rupiah(p.amount)+'</div></div><div><span class="text-xs text-slate-500">Kategori</span><div class="font-bold">'+esc(p.category)+'</div></div><div><span class="text-xs text-slate-500">Tanggal</span><div class="font-bold">'+dateFmt(p.date)+'</div></div><details><summary class="text-xs font-bold cursor-pointer">Lihat teks OCR</summary><pre class="text-[10px] whitespace-pre-wrap mt-2 bg-white p-3 rounded-xl border">'+esc(raw)+'</pre></details></div><button onclick="saveOCR()" class="w-full mt-3 py-4 rounded-2xl bg-blue-600 text-white font-black">Simpan Hasil AI</button>'}
 let currentOCR=null;
-async function saveOCR(){if(!currentOCR)return;if(!currentOCR.amount){alert("Nominal belum terbaca. Gunakan input manual agar tidak salah.");return}const {data:{user}}=await sb.auth.getUser();const {error}=await sb.from("kp_transactions").insert({user_id:user.id,scope,type:"expense",amount:currentOCR.amount,category:currentOCR.category,merchant:currentOCR.merchant,transaction_date:currentOCR.date,description:"Scan struk AI",source:"ocr",ai_confidence:currentOCR.confidence,receipt_text:currentOCR.text});if(error)return alert(error.message);closeModal("scannerModal");currentOCR=null;await loadTransactions()}
+async function saveOCR(){
+ if(!currentOCR||!currentOCR.amount){alert("Nominal belum terbaca. Gunakan input manual agar tidak salah.");return}
+ const {data:{user},error:authError}=await sb.auth.getUser();
+ if(authError||!user||user.is_anonymous){alert("Sesi login sudah tidak aktif. Silakan masuk lagi.");return}
+ const transactionDate=isValidISODate(currentOCR.date)?currentOCR.date:todayISO();
+ try{
+  const {data,error}=await sb.from("kp_transactions").insert({user_id:user.id,scope,type:"expense",amount:Number(currentOCR.amount),category:currentOCR.category,merchant:currentOCR.merchant,transaction_date:transactionDate,description:"Scan struk AI",source:"ocr",ai_confidence:currentOCR.confidence,receipt_text:currentOCR.text}).select("*").single();
+  if(error)throw error;if(!data)throw new Error("Hasil OCR tidak dikembalikan oleh database.");
+  transactions=[data,...transactions.filter(x=>x.id!==data.id)];render();closeModal("scannerModal");currentOCR=null;await loadTransactions()
+ }catch(err){console.error("Gagal menyimpan OCR:",err);alert("Hasil AI gagal disimpan: "+(err.message||"kesalahan tidak diketahui"))}
+}
 window.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal("entryModal");closeModal("scannerModal")}})
 let entryTypeInput=document.getElementById("entryType"),entryDate=document.getElementById("entryDate"),entryAmount=document.getElementById("entryAmount"),entryMerchant=document.getElementById("entryMerchant"),entryDescription=document.getElementById("entryDescription"),entryCategory=document.getElementById("entryCategory");
-sb.auth.onAuthStateChange((event,session)=>{if(session)showApp(session.user)});
+sb.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"){appReadyUserId=null;appInitUserId=null;appInitPromise=null;return}if(session)void showApp(session.user)});
 (async()=>{const {data}=await sb.auth.getSession();if(data.session)showApp(data.session.user);else setAuthMode("login");updateScopeUI()})();
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}</script>
