@@ -1,6 +1,6 @@
 # Keuangan Pintar - Audit Checkpoint
 
-Last code commit: f163524aad9cfa9422ce2f28d71291155ca11e89
+Last code commit: 92961089578a0f041c47a651e5fe1d925c4939f1
 Repository: https://github.com/JfsAITechnology/keuangan-pintar
 App URL: https://jfsaitechnology.github.io/keuangan-pintar/
 
@@ -12,7 +12,7 @@ App URL: https://jfsaitechnology.github.io/keuangan-pintar/
 - OCR: dependency failure fallback, file-size guard, amount parsing, date validation, save path.
 - Runtime robustness: implicit DOM globals removed from critical dashboard/auth elements.
 - Performance: current-month query, pagination beyond 1,000 rows, explicit select columns.
-- Regression protection: scripts/validate.mjs + .github/workflows/validate.yml.
+- Regression protection: scripts/validate.mjs + scripts/runtime-contract.mjs + .github/workflows/validate.yml.
 
 ## Database verification
 - Current month finance query was checked directly in Supabase.
@@ -29,6 +29,7 @@ App URL: https://jfsaitechnology.github.io/keuangan-pintar/
 
 ## Runtime verification
 - Static validator executes successfully against current index.html and sw.js.
+- Runtime contract executes against the current production inline script: PASS for manual income/expense, balance, scope isolation, refresh, amount/date/OCR parsing, select-error, and insert-error paths.
 - 2 inline scripts compile successfully.
 - 22 required DOM IDs checked.
 - Submit-type Save button present.
@@ -45,12 +46,13 @@ App URL: https://jfsaitechnology.github.io/keuangan-pintar/
 The environment could not browser-open the GitHub Pages URL, so live visual/browser verification of the published page could not be completed here. GitHub main-branch commits and the current repository files were verified directly.
 
 ## Next chat checkpoint
-1. Start from commit f163524aad9cfa9422ce2f28d71291155ca11e89.
+1. Start from current code commit 92961089578a0f041c47a651e5fe1d925c4939f1. The original audit baseline was f163524aad9cfa9422ce2f28d71291155ca11e89.
 2. First verify GitHub Pages is serving that commit.
 3. Then perform real browser E2E with a normal permanent test account:
    login -> dashboard -> add income -> verify income/saldo/daily detail -> add expense -> verify net change -> switch Personal/Bisnis -> refresh -> logout/login -> OCR receipt -> verify saved transaction.
 4. If live Pages still serves old code, inspect GitHub Pages deployment/cache before changing application logic.
 5. Database hardening SQL is recorded at supabase/audit/keuangan-pintar-hardening.sql.
+6. Runtime regression test is scripts/runtime-contract.mjs and is wired into GitHub Actions.
 
 ## Current expected finance semantics
 Dashboard numbers are current-month totals:
