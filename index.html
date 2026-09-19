@@ -1,1 +1,155 @@
-<!doctype html><html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Keuangan Pintar — JFS AI</title><script src="https://cdn.tailwindcss.com"></script></head><body class="bg-slate-50"><main class="max-w-3xl mx-auto p-6"><header class="flex items-center gap-3 mb-8"><div class="w-11 h-11 rounded-xl bg-slate-900 text-white grid place-items-center font-black">JFS</div><div><h1 class="text-2xl font-black">Keuangan Pintar</h1><p class="text-sm text-slate-500">JFS AI • Personal & Business Finance</p></div></header><section class="bg-white rounded-3xl border p-6 shadow-sm"><h2 class="text-xl font-black">Aplikasi Keuangan Pintar</h2><p class="mt-2 text-slate-600">Dashboard keuangan pribadi dan bisnis berbasis AI.</p><div class="grid sm:grid-cols-3 gap-3 mt-6"><div class="p-4 rounded-2xl bg-slate-900 text-white"><div class="text-sm">Saldo</div><div class="text-2xl font-black mt-2">Rp0</div></div><div class="p-4 rounded-2xl bg-emerald-50"><div class="text-sm">Pemasukan</div><div class="text-2xl font-black mt-2">Rp0</div></div><div class="p-4 rounded-2xl bg-red-50"><div class="text-sm">Pengeluaran</div><div class="text-2xl font-black mt-2">Rp0</div></div></div><div class="mt-6 p-4 rounded-2xl bg-blue-50 text-blue-800 text-sm">Versi JFS AI Technology sedang dipublikasikan.</div></section></main></body></html>
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Keuangan Pintar — JFS AI</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f8fafc}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+.glass{background:rgba(255,255,255,.9);backdrop-filter:blur(14px)}
+.modal{background:rgba(15,23,42,.58);backdrop-filter:blur(5px)}
+.fade{animation:fade .2s ease-out}@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.hide-scrollbar::-webkit-scrollbar{display:none}
+.hide-scrollbar{scrollbar-width:none}
+</style>
+</head>
+<body>
+<div id="authView" class="min-h-screen flex items-center justify-center p-4">
+  <div class="w-full max-w-md bg-white rounded-3xl shadow-xl border border-slate-100 p-6">
+    <div class="flex items-center gap-3 mb-7">
+      <div class="w-12 h-12 rounded-2xl bg-slate-900 text-white grid place-items-center font-black">KP</div>
+      <div><div class="font-black text-xl">Keuangan Pintar</div><div class="text-xs text-slate-500">JFS AI • Personal & Business Finance</div></div>
+    </div>
+    <div class="flex bg-slate-100 rounded-xl p-1 mb-5">
+      <button id="loginTab" onclick="setAuthMode('login')" class="flex-1 py-2 rounded-lg bg-white font-bold text-sm">Masuk</button>
+      <button id="signupTab" onclick="setAuthMode('signup')" class="flex-1 py-2 rounded-lg text-slate-500 font-bold text-sm">Daftar</button>
+    </div>
+    <form id="authForm" class="space-y-4">
+      <div id="nameWrap" class="hidden"><label class="text-sm font-bold">Nama</label><input id="authName" class="mt-1 w-full p-3 rounded-xl border" placeholder="Nama Anda"></div>
+      <div><label class="text-sm font-bold">Email</label><input id="authEmail" type="email" required class="mt-1 w-full p-3 rounded-xl border" placeholder="nama@email.com"></div>
+      <div><label class="text-sm font-bold">Password</label><input id="authPassword" type="password" required minlength="6" class="mt-1 w-full p-3 rounded-xl border" placeholder="Minimal 6 karakter"></div>
+      <button id="authSubmit" class="w-full py-3.5 rounded-2xl bg-slate-900 text-white font-black">Masuk</button>
+    </form>
+    <p id="authMsg" class="text-sm mt-4 text-center text-slate-500"></p>
+    <div class="mt-6 p-3 rounded-2xl bg-blue-50 text-blue-800 text-xs">Data transaksi disimpan di Supabase dan dilindungi Row Level Security berdasarkan akun Anda.</div>
+  </div>
+</div>
+
+<div id="appView" class="hidden min-h-screen">
+<header class="sticky top-0 z-30 glass border-b">
+  <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+    <div class="flex items-center gap-3"><div class="w-10 h-10 rounded-xl bg-slate-900 text-white grid place-items-center font-black text-sm">KP</div><div><b>Keuangan Pintar</b><div class="text-[11px] text-slate-500">JFS AI Finance</div></div></div>
+    <div class="flex items-center gap-2">
+      <button id="scopeBtn" onclick="toggleScope()" class="text-xs font-bold px-3 py-2 rounded-xl bg-slate-100">Personal</button>
+      <button onclick="signOut()" class="text-xs font-bold px-3 py-2 rounded-xl text-slate-500">Keluar</button>
+    </div>
+  </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-4 py-5 pb-24">
+  <div class="flex justify-between items-end mb-5"><div><p class="text-sm text-slate-500">Ringkasan</p><h1 class="text-2xl font-black">Dashboard</h1></div><span id="monthLabel" class="text-xs bg-white border px-3 py-1.5 rounded-full"></span></div>
+
+  <section class="grid md:grid-cols-3 gap-3 mb-5">
+    <div class="bg-slate-900 text-white rounded-3xl p-5"><div class="text-sm text-slate-300">Saldo</div><div id="balance" class="text-3xl font-black mt-3">Rp0</div><div class="text-xs text-slate-400 mt-2">Pemasukan − pengeluaran</div></div>
+    <div class="bg-white rounded-3xl p-5 border shadow-sm"><div class="text-sm text-slate-500">Pemasukan</div><div id="income" class="text-2xl font-black text-emerald-600 mt-3">Rp0</div></div>
+    <div class="bg-white rounded-3xl p-5 border shadow-sm"><div class="text-sm text-slate-500">Pengeluaran</div><div id="expense" class="text-2xl font-black text-red-600 mt-3">Rp0</div></div>
+  </section>
+
+  <section class="grid sm:grid-cols-3 gap-3 mb-6">
+    <button onclick="openScanner()" class="p-4 rounded-2xl bg-blue-600 text-white text-left shadow-sm"><b>📷 Scan Struk (AI)</b><div class="text-xs text-blue-100 mt-1">OCR → parsing → kategori</div></button>
+    <button onclick="openEntry('income')" class="p-4 rounded-2xl bg-white border text-left"><b>💵 Tambah Pemasukan</b><div class="text-xs text-slate-500 mt-1">Catat manual</div></button>
+    <button onclick="openEntry('expense')" class="p-4 rounded-2xl bg-white border text-left"><b>🧾 Tambah Pengeluaran</b><div class="text-xs text-slate-500 mt-1">Catat manual</div></button>
+  </section>
+
+  <section class="bg-white rounded-3xl border p-5 mb-6">
+    <div class="flex justify-between items-center mb-4"><div><h2 class="font-black">Breakdown Pengeluaran</h2><p class="text-xs text-slate-500">Kategori pada mode <span id="chartScope">Personal</span></p></div></div>
+    <div class="h-64"><canvas id="chart"></canvas></div>
+  </section>
+
+  <section>
+    <div class="flex justify-between items-end mb-3"><div><h2 class="text-lg font-black">Transaksi Terbaru</h2><p class="text-xs text-slate-500">Tersimpan di database</p></div><button onclick="loadTransactions()" class="text-xs font-bold text-blue-600">Refresh</button></div>
+    <div id="transactions" class="space-y-3"></div>
+  </section>
+</main>
+
+<nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t z-20"><div class="max-w-lg mx-auto h-16 flex items-center justify-around"><button class="text-blue-600 text-xs font-bold">⌂<br>Beranda</button><button onclick="openScanner()" class="text-slate-500 text-xs font-bold">📷<br>Scan AI</button><button onclick="openEntry('expense')" class="text-slate-500 text-xs font-bold">＋<br>Tambah</button></div></nav>
+</div>
+
+<div id="entryModal" class="hidden fixed inset-0 z-50 modal items-end sm:items-center justify-center p-0 sm:p-4">
+<div class="fade bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl p-5 max-h-[92vh] overflow-y-auto">
+<div class="flex justify-between items-center mb-5"><div><h2 class="text-xl font-black">Tambah Transaksi</h2><p class="text-xs text-slate-500">Mode <span id="entryScopeLabel"></span></p></div><button onclick="closeModal('entryModal')" class="w-9 h-9 bg-slate-100 rounded-xl">✕</button></div>
+<form id="entryForm" class="space-y-4">
+<div class="grid grid-cols-2 gap-2"><button type="button" id="incomeBtn" onclick="setEntryType('income')" class="py-3 rounded-xl border font-bold">Pemasukan</button><button type="button" id="expenseBtn" onclick="setEntryType('expense')" class="py-3 rounded-xl border font-bold">Pengeluaran</button></div>
+<input id="entryType" type="hidden" value="expense">
+<div><label class="text-sm font-bold">Jumlah</label><input id="entryAmount" required inputmode="numeric" class="mt-1 w-full p-3 rounded-xl border text-lg font-black" placeholder="Rp 0"></div>
+<div><label class="text-sm font-bold">Kategori</label><select id="entryCategory" class="mt-1 w-full p-3 rounded-xl border"></select></div>
+<div><label class="text-sm font-bold">Tanggal</label><input id="entryDate" type="date" required class="mt-1 w-full p-3 rounded-xl border"></div>
+<div><label class="text-sm font-bold">Merchant / Sumber</label><input id="entryMerchant" class="mt-1 w-full p-3 rounded-xl border" placeholder="Contoh: Indomaret / Gaji"></div>
+<div><label class="text-sm font-bold">Keterangan</label><textarea id="entryDescription" rows="3" class="mt-1 w-full p-3 rounded-xl border resize-none" placeholder="Catatan tambahan"></textarea></div>
+<button class="w-full py-4 rounded-2xl bg-slate-900 text-white font-black">Simpan</button>
+</form></div></div>
+
+<div id="scannerModal" class="hidden fixed inset-0 z-50 modal items-end sm:items-center justify-center p-0 sm:p-4">
+<div class="fade bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl p-5 max-h-[92vh] overflow-y-auto">
+<div class="flex justify-between items-center mb-5"><div><h2 class="text-xl font-black">Scan Struk dengan AI</h2><p class="text-xs text-slate-500">OCR lokal di browser</p></div><button onclick="closeModal('scannerModal')" class="w-9 h-9 bg-slate-100 rounded-xl">✕</button></div>
+<label for="receipt" class="block border-2 border-dashed border-blue-200 bg-blue-50 rounded-3xl p-8 text-center cursor-pointer"><div class="text-5xl">📷</div><b class="block mt-3">Ambil / pilih foto struk</b><span class="text-xs text-slate-500">Jangan upload dokumen yang berisi data sensitif selain yang diperlukan.</span></label>
+<input id="receipt" type="file" accept="image/*" capture="environment" class="hidden">
+<div id="scanStatus" class="hidden mt-4 p-4 bg-slate-50 rounded-2xl text-sm"></div>
+<div id="ocrResult" class="hidden mt-4"></div>
+</div></div>
+
+<script>
+const SUPABASE_URL="https://evtkeyfjgqwarsmlzrkh.supabase.co";
+const SUPABASE_KEY="sb_publishable_7lGio_RVVgkVASYYyBHQIg_GvL-8ELD";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const cats={income:["Gaji Bulanan","Uang Tak Terduga","Penjualan / Usaha"],expense:["Belanja Keperluan Rumah Bulanan","Stok Bahan Mentah","Tagihan & Utilitas","Servis & Perbaikan","Lain-lain"]};
+let authMode="login",scope=localStorage.getItem("kp_scope")||"personal",entryType="expense",transactions=[],chart;
+
+const rupiah=n=>new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n)||0);
+const dateFmt=s=>new Intl.DateTimeFormat("id-ID",{day:"numeric",month:"short",year:"numeric"}).format(new Date(s+"T00:00:00"));
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+function setAuthMode(m){authMode=m;document.getElementById("nameWrap").classList.toggle("hidden",m==="login");document.getElementById("loginTab").className=m==="login"?"flex-1 py-2 rounded-lg bg-white font-bold text-sm":"flex-1 py-2 rounded-lg text-slate-500 font-bold text-sm";document.getElementById("signupTab").className=m==="signup"?"flex-1 py-2 rounded-lg bg-white font-bold text-sm":"flex-1 py-2 rounded-lg text-slate-500 font-bold text-sm";document.getElementById("authSubmit").textContent=m==="login"?"Masuk":"Buat Akun";document.getElementById("authMsg").textContent=""}
+async function authSubmit(e){e.preventDefault();const email=authEmail.value.trim(),password=authPassword.value,name=authName.value.trim();authMsg.textContent="Memproses...";let r;if(authMode==="login")r=await sb.auth.signInWithPassword({email,password});else r=await sb.auth.signUp({email,password,options:{data:{display_name:name}}});if(r.error){authMsg.textContent=r.error.message;authMsg.className="text-sm mt-4 text-center text-red-600";return}if(authMode==="signup"&&!r.data.session){authMsg.textContent="Akun dibuat. Jika konfirmasi email aktif, cek email lalu masuk.";authMsg.className="text-sm mt-4 text-center text-emerald-600";return}showApp(r.data.session.user)}
+document.getElementById("authForm").addEventListener("submit",authSubmit);
+
+function showApp(user){document.getElementById("authView").classList.add("hidden");document.getElementById("appView").classList.remove("hidden");updateScopeUI();loadTransactions();ensureProfile(user)}
+async function ensureProfile(user){await sb.from("kp_profiles").upsert({user_id:user.id,display_name:user.user_metadata?.display_name||user.email,default_scope:scope},{onConflict:"user_id"})}
+async function signOut(){await sb.auth.signOut();location.reload()}
+function toggleScope(){scope=scope==="personal"?"business":"personal";localStorage.setItem("kp_scope",scope);updateScopeUI();loadTransactions()}
+function updateScopeUI(){document.getElementById("scopeBtn").textContent=scope==="personal"?"Personal":"Bisnis";document.getElementById("chartScope").textContent=scope==="personal"?"Personal":"Bisnis";document.getElementById("entryScopeLabel").textContent=scope==="personal"?"Personal":"Bisnis";document.getElementById("monthLabel").textContent=new Intl.DateTimeFormat("id-ID",{month:"long",year:"numeric"}).format(new Date())}
+
+async function loadTransactions(){const {data,error}=await sb.from("kp_transactions").select("*").eq("scope",scope).order("transaction_date",{ascending:false}).order("created_at",{ascending:false}).limit(200);if(error){console.error(error);return}transactions=data||[];render()}
+function render(){let inc=transactions.filter(x=>x.type==="income").reduce((a,x)=>a+Number(x.amount),0),exp=transactions.filter(x=>x.type==="expense").reduce((a,x)=>a+Number(x.amount),0);balance.textContent=rupiah(inc-exp);income.textContent=rupiah(inc);expense.textContent=rupiah(exp);transactionsEl();renderChart()}
+function transactionsEl(){const el=document.getElementById("transactions");if(!transactions.length){el.innerHTML='<div class="bg-white border rounded-3xl p-8 text-center text-sm text-slate-500">Belum ada transaksi pada mode ini.</div>';return}el.innerHTML=transactions.map(x=>{let plus=x.type==="income";return '<div class="bg-white border rounded-2xl p-4 flex items-center gap-3"><div class="w-11 h-11 rounded-xl grid place-items-center '+(plus?"bg-emerald-50 text-emerald-600":"bg-red-50 text-red-600")+'">'+(plus?"↗":"↘")+'</div><div class="min-w-0 flex-1"><div class="font-bold truncate">'+esc(x.merchant||x.description||x.category)+'</div><div class="flex gap-2 items-center mt-1 flex-wrap"><span class="text-[11px] bg-slate-100 px-2 py-1 rounded-lg">'+esc(x.category)+'</span><span class="text-[11px] text-slate-400">'+dateFmt(x.transaction_date)+'</span>'+(x.source!=="manual"?'<span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded-lg">AI</span>':"")+'</div></div><div class="font-black whitespace-nowrap '+(plus?"text-emerald-600":"text-red-600")+'">'+(plus?"+":"-")+rupiah(x.amount)+'</div></div>'}).join("")}
+function renderChart(){const map={};transactions.filter(x=>x.type==="expense").forEach(x=>map[x.category]=(map[x.category]||0)+Number(x.amount));if(chart)chart.destroy();chart=new Chart(document.getElementById("chart"),{type:"doughnut",data:{labels:Object.keys(map).length?Object.keys(map):["Belum ada data"],datasets:[{data:Object.values(map).length?Object.values(map):[1],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:"68%",plugins:{legend:{position:"bottom",labels:{usePointStyle:true,padding:14,font:{size:11}}},tooltip:{callbacks:{label:c=>c.label+": "+rupiah(c.raw)}}}}})}
+
+function openEntry(t){entryType=t;entryTypeInput.value=t;document.getElementById("entryModal").classList.remove("hidden");document.getElementById("entryModal").classList.add("flex");entryDate.value=new Date().toISOString().slice(0,10);entryAmount.value="";entryMerchant.value="";entryDescription.value="";setEntryType(t)}
+function closeModal(id){document.getElementById(id).classList.add("hidden");document.getElementById(id).classList.remove("flex")}
+function setEntryType(t){entryType=t;entryTypeInput.value=t;document.getElementById("incomeBtn").className=t==="income"?"py-3 rounded-xl border border-emerald-500 bg-emerald-50 text-emerald-700 font-bold":"py-3 rounded-xl border font-bold";document.getElementById("expenseBtn").className=t==="expense"?"py-3 rounded-xl border border-red-500 bg-red-50 text-red-700 font-bold":"py-3 rounded-xl border font-bold";entryCategory.innerHTML=cats[t].map(x=>'<option>'+esc(x)+'</option>').join("")}
+document.getElementById("entryAmount").addEventListener("input",e=>{let n=e.target.value.replace(/\D/g,"");e.target.value=n?Number(n).toLocaleString("id-ID"):""});
+document.getElementById("entryForm").addEventListener("submit",async e=>{e.preventDefault();let amount=Number(entryAmount.value.replace(/\D/g,""));if(!amount)return alert("Masukkan jumlah.");const {data:{user}}=await sb.auth.getUser();const {error}=await sb.from("kp_transactions").insert({user_id:user.id,scope,type:entryType,amount,category:entryCategory.value,merchant:entryMerchant.value.trim()||null,transaction_date:entryDate.value,description:entryDescription.value.trim()||null,source:"manual"});if(error)return alert(error.message);closeModal("entryModal");await loadTransactions()});
+
+function openScanner(){document.getElementById("scannerModal").classList.remove("hidden");document.getElementById("scannerModal").classList.add("flex");document.getElementById("scanStatus").classList.add("hidden");document.getElementById("ocrResult").classList.add("hidden")}
+document.getElementById("receipt").addEventListener("change",async e=>{const file=e.target.files[0];if(!file)return;const st=document.getElementById("scanStatus");st.classList.remove("hidden");st.innerHTML="<b>🤖 AI membaca struk...</b><div class='text-xs text-slate-500 mt-1'>OCR sedang mengenali teks. Proses dapat memerlukan beberapa detik.</div>";try{const result=await Tesseract.recognize(file,"ind",{logger:m=>{if(m.status==="recognizing text")st.innerHTML="<b>🤖 AI membaca struk...</b><div class='text-xs text-slate-500 mt-1'>Progress "+Math.round((m.progress||0)*100)+"%</div>"}});const text=result.data.text||"";const parsed=parseReceipt(text);showOCR(parsed,text)}catch(err){console.error(err);st.innerHTML="<span class='text-red-600 font-bold'>OCR gagal. Silakan gunakan input manual.</span>"}});
+function parseReceipt(text){const clean=text.replace(/\s+/g," ").trim();let nums=[...clean.matchAll(/(?:Rp\.?\s*)?([0-9][0-9.,]{2,})/gi)].map(m=>Number(m[1].replace(/\./g,"").replace(/,(\d{2})$/,".$1").replace(/,/g,""))).filter(n=>n>1000&&n<100000000);let amount=nums.length?Math.max(...nums):0;let lower=clean.toLowerCase();let category=lower.includes("listrik")||lower.includes("pln")||lower.includes("internet")?"Tagihan & Utilitas":lower.includes("sabun")||lower.includes("shampoo")||lower.includes("bahan")?"Stok Bahan Mentah":"Belanja Keperluan Rumah Bulanan";let merchant=(clean.split(" ").slice(0,8).join(" ")||"Merchant dari struk");let dm=clean.match(/(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})/);let date=new Date().toISOString().slice(0,10);if(dm){let y=dm[3].length===2?"20"+dm[3]:dm[3];date=y+"-"+dm[2].padStart(2,"0")+"-"+dm[1].padStart(2,"0")}return{type:"expense",amount,category,merchant,date,confidence:amount?0.86:0.45,text:clean}}
+function showOCR(p,raw){currentOCR=p;const el=document.getElementById("ocrResult");el.classList.remove("hidden");el.innerHTML='<div class="p-4 rounded-2xl bg-slate-50 space-y-3"><div class="flex justify-between"><b>Hasil AI</b><span class="text-xs bg-emerald-50 text-emerald-600 px-2 py-1 rounded-lg">Confidence '+Math.round(p.confidence*100)+'%</span></div><div><span class="text-xs text-slate-500">Merchant</span><div class="font-bold">'+esc(p.merchant)+'</div></div><div><span class="text-xs text-slate-500">Nominal</span><div class="text-xl font-black">'+rupiah(p.amount)+'</div></div><div><span class="text-xs text-slate-500">Kategori</span><div class="font-bold">'+esc(p.category)+'</div></div><div><span class="text-xs text-slate-500">Tanggal</span><div class="font-bold">'+dateFmt(p.date)+'</div></div><details><summary class="text-xs font-bold cursor-pointer">Lihat teks OCR</summary><pre class="text-[10px] whitespace-pre-wrap mt-2 bg-white p-3 rounded-xl border">'+esc(raw)+'</pre></details></div><button onclick="saveOCR()" class="w-full mt-3 py-4 rounded-2xl bg-blue-600 text-white font-black">Simpan Hasil AI</button>'}
+let currentOCR=null;
+async function saveOCR(){if(!currentOCR)return;if(!currentOCR.amount){alert("Nominal belum terbaca. Gunakan input manual agar tidak salah.");return}const {data:{user}}=await sb.auth.getUser();const {error}=await sb.from("kp_transactions").insert({user_id:user.id,scope,type:"expense",amount:currentOCR.amount,category:currentOCR.category,merchant:currentOCR.merchant,transaction_date:currentOCR.date,description:"Scan struk AI",source:"ocr",ai_confidence:currentOCR.confidence,receipt_text:currentOCR.text});if(error)return alert(error.message);closeModal("scannerModal");currentOCR=null;await loadTransactions()}
+
+window.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal("entryModal");closeModal("scannerModal")}})
+let entryTypeInput=document.getElementById("entryType"),entryDate=document.getElementById("entryDate"),entryAmount=document.getElementById("entryAmount"),entryMerchant=document.getElementById("entryMerchant"),entryDescription=document.getElementById("entryDescription"),entryCategory=document.getElementById("entryCategory");
+sb.auth.onAuthStateChange((event,session)=>{if(session)showApp(session.user)});
+(async()=>{const {data}=await sb.auth.getSession();if(data.session)showApp(data.session.user);else setAuthMode("login");updateScopeUI()})();
+</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}</script>
+</body>
+</html>
