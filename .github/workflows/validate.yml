@@ -20,3 +20,5 @@ jobs:
           node-version: 20
       - name: Static validation
         run: node scripts/validate.mjs
+      - name: Runtime contract
+        run: node scripts/runtime-contract.mjs
