@@ -60,6 +60,7 @@ const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{global:{fetch:(url,opt
 const cats={income:["Gaji Bulanan","Uang Tak Terduga","Penjualan / Usaha"],expense:["Belanja Keperluan Rumah Bulanan","Stok Bahan Mentah","Tagihan & Utilitas","Servis & Perbaikan","Lain-lain"]};
 let authMode="login",scope=["personal","business"].includes(localStorage.getItem("kp_scope"))?localStorage.getItem("kp_scope"):"personal",entryType="expense",transactions=[],chart;
 let appReadyUserId=null,appInitUserId=null,appInitPromise=null;
+const authNameEl=document.getElementById("authName"),authEmailEl=document.getElementById("authEmail"),authPasswordEl=document.getElementById("authPassword"),authMsgEl=document.getElementById("authMsg"),balanceEl=document.getElementById("balance"),incomeEl=document.getElementById("income"),expenseEl=document.getElementById("expense");
 const rupiah=n=>new Intl.NumberFormat("id-ID",{style:"currency",currency:"IDR",maximumFractionDigits:0}).format(Number(n)||0);
 const dateFmt=s=>new Intl.DateTimeFormat("id-ID",{day:"numeric",month:"short",year:"numeric"}).format(new Date(s+"T00:00:00"));
 const monthYearFmt=s=>new Intl.DateTimeFormat("id-ID",{month:"long",year:"numeric"}).format(new Date(s+"T00:00:00"));
@@ -76,18 +77,18 @@ function setAppStatus(message,kind="info"){
 function setAuthMode(m){authMode=m;document.getElementById("nameWrap").classList.toggle("hidden",m==="login");document.getElementById("loginTab").className=m==="login"?"flex-1 py-2 rounded-lg bg-white font-bold text-sm":"flex-1 py-2 rounded-lg text-slate-500 font-bold text-sm";document.getElementById("signupTab").className=m==="signup"?"flex-1 py-2 rounded-lg bg-white font-bold text-sm":"flex-1 py-2 rounded-lg text-slate-500 font-bold text-sm";document.getElementById("authSubmit").textContent=m==="login"?"Masuk":"Buat Akun";document.getElementById("authMsg").textContent="";document.getElementById("authMsg").className="text-sm mt-4 text-center text-slate-500"}
 async function authSubmit(e){
  e.preventDefault();
- const email=authEmail.value.trim(),password=authPassword.value,name=authName.value.trim();
+ const email=authEmailEl.value.trim(),password=authPasswordEl.value,name=authNameEl.value.trim();
  if(!email||!password)return;
- authMsg.textContent="Memproses...";authMsg.className="text-sm mt-4 text-center text-slate-500";
+ authMsgEl.textContent="Memproses...";authMsgEl.className="text-sm mt-4 text-center text-slate-500";
  try{
   const r=authMode==="login"
    ?await sb.auth.signInWithPassword({email,password})
    :await sb.auth.signUp({email,password,options:{data:{display_name:name}}});
   if(r.error)throw r.error;
-  if(authMode==="signup"&&!r.data.session){authMsg.textContent="Akun dibuat. Jika konfirmasi email aktif, cek email lalu masuk.";authMsg.className="text-sm mt-4 text-center text-emerald-600";return}
+  if(authMode==="signup"&&!r.data.session){authMsgEl.textContent="Akun dibuat. Jika konfirmasi email aktif, cek email lalu masuk.";authMsgEl.className="text-sm mt-4 text-center text-emerald-600";return}
   if(!r.data.user)throw new Error("Akun tidak dikembalikan oleh layanan autentikasi.");
   await showApp(r.data.user);
- }catch(err){console.error("Auth gagal:",err);authMsg.textContent=err.message||"Gagal memproses autentikasi.";authMsg.className="text-sm mt-4 text-center text-red-600"}
+ }catch(err){console.error("Auth gagal:",err);authMsgEl.textContent=err.message||"Gagal memproses autentikasi.";authMsgEl.className="text-sm mt-4 text-center text-red-600"}
 }
 document.getElementById("authForm").addEventListener("submit",authSubmit);
 async function showApp(user){
@@ -129,7 +130,7 @@ function render(){
  const currentMonth=todayISO().slice(0,7);
  const monthTx=transactions.filter(x=>String(x.transaction_date||"").slice(0,7)===currentMonth);
  let inc=monthTx.filter(x=>x.type==="income").reduce((a,x)=>a+Number(x.amount),0),exp=monthTx.filter(x=>x.type==="expense").reduce((a,x)=>a+Number(x.amount),0);
- balance.textContent=rupiah(inc-exp);income.textContent=rupiah(inc);expense.textContent=rupiah(exp);transactionsEl(monthTx);renderDailyBreakdown(monthTx);renderChart(monthTx);
+ balanceEl.textContent=rupiah(inc-exp);incomeEl.textContent=rupiah(inc);expenseEl.textContent=rupiah(exp);transactionsEl(monthTx);renderDailyBreakdown(monthTx);renderChart(monthTx);
 }
 function transactionsEl(monthTx){const el=document.getElementById("transactions");if(!monthTx.length){el.innerHTML='<div class="bg-white border rounded-3xl p-8 text-center text-sm text-slate-500">Belum ada transaksi pada bulan ini.</div>';return}el.innerHTML=monthTx.map(x=>{let plus=x.type==="income";return '<div class="bg-white border rounded-2xl p-4 flex items-center gap-3"><div class="w-11 h-11 rounded-xl grid place-items-center '+(plus?"bg-emerald-50 text-emerald-600":"bg-red-50 text-red-600")+'">'+(plus?"↗":"↘")+'</div><div class="min-w-0 flex-1"><div class="font-bold truncate">'+esc(x.merchant||x.description||x.category)+'</div><div class="flex gap-2 items-center mt-1 flex-wrap"><span class="text-[11px] bg-slate-100 px-2 py-1 rounded-lg">'+esc(x.category)+'</span><span class="text-[11px] text-slate-400">'+dateFmt(x.transaction_date)+'</span>'+(x.source!=="manual"?'<span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded-lg">AI</span>':"")+'</div></div><div class="font-black whitespace-nowrap '+(plus?"text-emerald-600":"text-red-600")+'">'+(plus?"+":"-")+rupiah(x.amount)+'</div></div>'}).join("")}
 function renderDailyBreakdown(monthTx){const el=document.getElementById("dailyBreakdown");const map={};monthTx.forEach(x=>{const d=x.transaction_date;if(!map[d])map[d]={income:0,expense:0};if(x.type==="income")map[d].income+=Number(x.amount);else map[d].expense+=Number(x.amount)});const days=Object.keys(map).sort((a,b)=>b.localeCompare(a));if(!days.length){el.innerHTML='<div class="p-5 rounded-2xl bg-slate-50 text-sm text-slate-500 text-center">Belum ada transaksi bulan ini.</div>';return}el.innerHTML=days.map(d=>{const v=map[d];return '<div class="border rounded-2xl p-4"><div class="font-bold">'+dateFmt(d)+'</div><div class="grid grid-cols-2 gap-2 mt-2"><div class="rounded-xl bg-emerald-50 p-3"><div class="text-[11px] text-emerald-700">Pemasukan</div><div class="font-black text-emerald-700">'+rupiah(v.income)+'</div></div><div class="rounded-xl bg-red-50 p-3"><div class="text-[11px] text-red-700">Pengeluaran</div><div class="font-black text-red-700">'+rupiah(v.expense)+'</div></div></div></div>'}).join("")}
