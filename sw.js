@@ -1,4 +1,4 @@
-const CACHE="keuangan-pintar-v4";
+const CACHE="keuangan-pintar-v5";
 const ASSETS=["./","./index.html","./manifest.webmanifest","./assets/jfs-ai-robot.svg.png?v=2"];
 const SUPABASE_HOST="evtkeyfjgqwarsmlzrkh.supabase.co";
 
