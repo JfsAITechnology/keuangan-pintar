@@ -67,7 +67,7 @@ const monthYearFmt=s=>new Intl.DateTimeFormat("id-ID",{month:"long",year:"numeri
 const todayISO=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
 const nextMonthISO=()=>{const d=new Date();const n=new Date(d.getFullYear(),d.getMonth()+1,1);return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0")};
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
-const isValidISODate=s=>/^\d{4}-\d{2}-\d{2}$/.test(String(s))&&!Number.isNaN(new Date(String(s)+"T00:00:00").getTime());
+const isValidISODate=s=>{if(!/^\d{4}-\d{2}-\d{2}$/.test(String(s)))return false;const [y,m,d]=String(s).split("-").map(Number),dt=new Date(Date.UTC(y,m-1,d));return dt.getUTCFullYear()===y&&dt.getUTCMonth()===m-1&&dt.getUTCDate()===d};
 function setAppStatus(message,kind="info"){
  const el=document.getElementById("appStatus"); if(!el)return;
  if(!message){el.className="hidden mb-4 rounded-2xl border p-4 text-sm";el.textContent="";return}
@@ -112,19 +112,23 @@ async function signOut(){try{await sb.auth.signOut()}finally{appReadyUserId=null
 function toggleScope(){scope=scope==="personal"?"business":"personal";localStorage.setItem("kp_scope",scope);updateScopeUI();loadTransactions()}
 function updateScopeUI(){document.getElementById("scopeBtn").textContent=scope==="personal"?"Personal":"Bisnis";document.getElementById("chartScope").textContent=scope==="personal"?"Personal":"Bisnis";document.getElementById("entryScopeLabel").textContent=scope==="personal"?"Personal":"Bisnis";document.getElementById("monthLabel").textContent=monthYearFmt(todayISO())}
 async function loadTransactions(){
- const {data:{user},error:authError}=await sb.auth.getUser();
- if(authError)throw authError;
- if(!user||user.is_anonymous){transactions=[];render();setAppStatus("Sesi login tidak valid. Silakan masuk kembali.","error");return false}
- const start=todayISO().slice(0,7)+"-01",next=nextMonthISO();
- let rows=[],from=0;
- while(true){
-  const {data,error}=await sb.from("kp_transactions").select("*").eq("user_id",user.id).eq("scope",scope).gte("transaction_date",start).lt("transaction_date",next).order("transaction_date",{ascending:false}).order("created_at",{ascending:false}).range(from,from+999);
-  if(error){console.error("Gagal memuat transaksi:",error);transactions=[];render();setAppStatus("Data transaksi gagal dimuat: "+error.message,"error");return false}
-  rows.push(...(data||[]));
-  if((data||[]).length<1000)break;
-  from+=1000;
+ try{
+  const {data:{user},error:authError}=await sb.auth.getUser();
+  if(authError)throw authError;
+  if(!user||user.is_anonymous){transactions=[];render();setAppStatus("Sesi login tidak valid. Silakan masuk kembali.","error");return false}
+  const start=todayISO().slice(0,7)+"-01",next=nextMonthISO(),columns="id,scope,type,amount,category,merchant,transaction_date,description,source,ai_confidence,created_at";
+  let rows=[],from=0;
+  while(true){
+   const {data,error}=await sb.from("kp_transactions").select(columns).eq("user_id",user.id).eq("scope",scope).gte("transaction_date",start).lt("transaction_date",next).order("transaction_date",{ascending:false}).order("created_at",{ascending:false}).range(from,from+999);
+   if(error)throw error;
+   rows.push(...(data||[]));
+   if((data||[]).length<1000)break;
+   from+=1000;
+  }
+  transactions=rows;render();if(!document.getElementById("appStatus")?.textContent)setAppStatus("",null);return true;
+ }catch(error){
+  console.error("Gagal memuat transaksi:",error);transactions=[];render();setAppStatus("Data transaksi gagal dimuat: "+(error?.message||"kesalahan jaringan"),"error");return false;
  }
- transactions=rows;render();if(!document.getElementById("appStatus")?.textContent)setAppStatus("",null);return true;
 }
 function render(){
  const currentMonth=todayISO().slice(0,7);
@@ -139,14 +143,14 @@ function renderChart(monthTx){
  if(!holder)return;
  if(typeof Chart==="undefined"){holder.innerHTML='<div class="h-64 grid place-items-center rounded-2xl bg-amber-50 text-amber-800 text-sm p-5 text-center">Grafik belum tersedia karena layanan Chart.js tidak berhasil dimuat. Ringkasan dan transaksi tetap berfungsi.</div>';return}
  const map={};monthTx.filter(x=>x.type==="expense").forEach(x=>map[x.category]=(map[x.category]||0)+Number(x.amount));
- if(chart)chart.destroy();
- chart=new Chart(document.getElementById("chart"),{type:"doughnut",data:{labels:Object.keys(map).length?Object.keys(map):["Belum ada data"],datasets:[{data:Object.values(map).length?Object.values(map):[1],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:"68%",plugins:{legend:{position:"bottom",labels:{usePointStyle:true,padding:14,font:{size:11}}},tooltip:{callbacks:{label:c=>c.label+": "+rupiah(c.raw)}}}}})
+ const canvas=document.getElementById("chart");if(!canvas)return;if(chart)chart.destroy();
+ chart=new Chart(canvas,{type:"doughnut",data:{labels:Object.keys(map).length?Object.keys(map):["Belum ada data"],datasets:[{data:Object.values(map).length?Object.values(map):[1],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,cutout:"68%",plugins:{legend:{position:"bottom",labels:{usePointStyle:true,padding:14,font:{size:11}}},tooltip:{callbacks:{label:c=>c.label+": "+rupiah(c.raw)}}}}})
 }
 function openEntry(t){entryType=t;entryTypeInput.value=t;document.getElementById("entryModal").classList.remove("hidden");document.getElementById("entryModal").classList.add("flex");const now=todayISO();entryDate.value=now;document.getElementById("entryDateDisplay").textContent=dateFmt(now);entryAmount.value="";entryMerchant.value="";entryDescription.value="";setEntryType(t)}
 function closeModal(id){document.getElementById(id).classList.add("hidden");document.getElementById(id).classList.remove("flex")}
 function setEntryType(t){entryType=t;entryTypeInput.value=t;document.getElementById("incomeBtn").className=t==="income"?"py-3 rounded-xl border border-emerald-500 bg-emerald-50 text-emerald-700 font-bold":"py-3 rounded-xl border font-bold";document.getElementById("expenseBtn").className=t==="expense"?"py-3 rounded-xl border border-red-500 bg-red-50 text-red-700 font-bold":"py-3 rounded-xl border font-bold";entryCategory.innerHTML=cats[t].map(x=>"<option>"+esc(x)+"</option>").join("")}
 document.getElementById("entryAmount").addEventListener("input",e=>{let n=e.target.value.replace(/\D/g,"");e.target.value=n?Number(n).toLocaleString("id-ID"):""});
-document.getElementById("entryForm").addEventListener("submit",async e=>{e.preventDefault();const submit=e.currentTarget.querySelector('button[type="submit"]');if(submit.disabled)return;let amount=Number(entryAmount.value.replace(/\D/g,""));if(!amount)return alert("Masukkan jumlah.");const transactionDate=todayISO();entryDate.value=transactionDate;const {data:{user},error:authError}=await sb.auth.getUser();if(authError||!user)return alert("Sesi login sudah tidak aktif. Silakan masuk lagi.");submit.disabled=true;submit.textContent="Menyimpan...";try{const payload={user_id:user.id,scope,type:entryType,amount,category:entryCategory.value,merchant:entryMerchant.value.trim()||null,transaction_date:transactionDate,description:entryDescription.value.trim()||null,source:"manual"};const {data,error}=await sb.from("kp_transactions").insert(payload).select("*").single();if(error)throw error;if(!data)throw new Error("Transaksi tidak dikembalikan oleh database.");transactions=[data,...transactions.filter(x=>x.id!==data.id)];render();closeModal("entryModal");await loadTransactions()}catch(error){console.error("Gagal menyimpan transaksi:",error);alert("Transaksi gagal disimpan: "+error.message)}finally{submit.disabled=false;submit.textContent="Simpan"}});
+document.getElementById("entryForm").addEventListener("submit",async e=>{e.preventDefault();const submit=e.currentTarget.querySelector('button[type="submit"]');if(submit.disabled)return;let amount=Number(entryAmount.value.replace(/\D/g,""));if(!Number.isSafeInteger(amount)||amount<=0)return alert("Masukkan jumlah yang valid.");const transactionDate=todayISO();entryDate.value=transactionDate;const {data:{user},error:authError}=await sb.auth.getUser();if(authError||!user)return alert("Sesi login sudah tidak aktif. Silakan masuk lagi.");submit.disabled=true;submit.textContent="Menyimpan...";try{const payload={user_id:user.id,scope,type:entryType,amount,category:entryCategory.value,merchant:entryMerchant.value.trim()||null,transaction_date:transactionDate,description:entryDescription.value.trim()||null,source:"manual"};const {data,error}=await sb.from("kp_transactions").insert(payload).select("*").single();if(error)throw error;if(!data)throw new Error("Transaksi tidak dikembalikan oleh database.");transactions=[data,...transactions.filter(x=>x.id!==data.id)];render();closeModal("entryModal");await loadTransactions()}catch(error){console.error("Gagal menyimpan transaksi:",error);alert("Transaksi gagal disimpan: "+error.message)}finally{submit.disabled=false;submit.textContent="Simpan"}});
 function openScanner(){document.getElementById("scannerModal").classList.remove("hidden");document.getElementById("scannerModal").classList.add("flex");document.getElementById("scanStatus").classList.add("hidden");document.getElementById("ocrResult").classList.add("hidden")}
 document.getElementById("receipt").addEventListener("change",async e=>{
  const file=e.target.files[0];if(!file)return;
@@ -161,11 +165,17 @@ document.getElementById("receipt").addEventListener("change",async e=>{
 });
 function parseAmountCandidate(raw){
  const s=String(raw||"").replace(/[^0-9.,-]/g,"");if(!s)return 0;
- const lastDot=s.lastIndexOf("."),lastComma=s.lastIndexOf(",");
  let normalized=s;
- if(lastComma>lastDot){
-  const decimals=s.length-lastComma-1;normalized=decimals===2?s.replace(/\./g,"").replace(",","."):s.replace(/,/g,"");
- }else normalized=s.replace(/,/g,"");
+ const lastDot=s.lastIndexOf("."),lastComma=s.lastIndexOf(",");
+ if(lastDot>=0&&lastComma>=0){
+  if(lastComma>lastDot&&s.length-lastComma-1===2)normalized=s.replace(/\./g,"").replace(",",".");
+  else if(lastDot>lastComma&&s.length-lastDot-1===2)normalized=s.replace(/,/g,"");
+  else normalized=s.replace(/[.,]/g,"");
+ }else if(lastDot>=0){
+  normalized=/\.\d{2}$/.test(s)?s:s.replace(/\./g,"");
+ }else if(lastComma>=0){
+  normalized=/,\d{2}$/.test(s)?s.replace(",","."):s.replace(/,/g,"");
+ }
  const n=Number(normalized);return Number.isFinite(n)?Math.round(n):0;
 }
 function parseReceipt(text){
@@ -195,7 +205,7 @@ async function saveOCR(){
 }
 window.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal("entryModal");closeModal("scannerModal")}})
 let entryTypeInput=document.getElementById("entryType"),entryDate=document.getElementById("entryDate"),entryAmount=document.getElementById("entryAmount"),entryMerchant=document.getElementById("entryMerchant"),entryDescription=document.getElementById("entryDescription"),entryCategory=document.getElementById("entryCategory");
-sb.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"){appReadyUserId=null;appInitUserId=null;appInitPromise=null;return}if(session)void showApp(session.user)});
+sb.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"){appReadyUserId=null;appInitUserId=null;appInitPromise=null;return}if(session)void showApp(session.user).catch(err=>{console.error("Gagal membuka aplikasi:",err);setAppStatus("Aplikasi gagal dimuat. Silakan refresh halaman.","error")})});
 (async()=>{const {data}=await sb.auth.getSession();if(data.session)showApp(data.session.user);else setAuthMode("login");updateScopeUI()})();
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}</script>
