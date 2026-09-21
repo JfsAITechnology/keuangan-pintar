@@ -44,7 +44,7 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
 <section class="grid sm:grid-cols-3 gap-3 mb-6"><button onclick="openScanner()" class="p-4 rounded-2xl bg-blue-600 text-white text-left shadow-sm"><b>📷 Scan Struk (AI)</b><div class="text-xs text-blue-100 mt-1">Gemini Vision → OCR → validasi</div></button><button onclick="openEntry('income')" class="p-4 rounded-2xl bg-white border text-left"><b>💵 Tambah Pemasukan</b><div class="text-xs text-slate-500 mt-1">Tanggal otomatis hari ini</div></button><button onclick="openEntry('expense')" class="p-4 rounded-2xl bg-white border text-left"><b>🧾 Tambah Pengeluaran</b><div class="text-xs text-slate-500 mt-1">Tanggal otomatis hari ini</div></button></section>
 <section class="bg-white rounded-3xl border p-5 mb-6"><div class="flex justify-between items-center mb-4"><div><h2 class="font-black">Breakdown Pengeluaran</h2><p class="text-xs text-slate-500">Kategori pada mode <span id="chartScope">Personal</span></p></div></div><div class="h-64"><canvas id="chart"></canvas></div></section>
 <section class="bg-white rounded-3xl border p-5 mb-6"><div class="mb-4"><h2 class="font-black">Rincian Harian</h2><p class="text-xs text-slate-500">Cek tanggal mana yang memiliki pemasukan dan pengeluaran.</p></div><div id="dailyBreakdown" class="space-y-2"></div></section>
-<section><div class="flex justify-between items-end mb-3"><div><h2 class="text-lg font-black">Transaksi Terbaru</h2><p class="text-xs text-slate-500">Tanggal transaksi otomatis mengikuti hari saat dicatat</p></div><button onclick="loadTransactions()" class="text-xs font-bold text-blue-600">Refresh</button></div><div id="transactions" class="space-y-3"></div></section>
+<section><div class="flex justify-between items-end mb-3"><div><h2 class="text-lg font-black">Transaksi Terbaru</h2><p class="text-xs text-slate-500">Tanggal transaksi otomatis mengikuti hari saat dicatat</p></div><button id="refreshBtn" onclick="refreshTransactions()" class="text-xs font-bold text-blue-600 px-3 py-2 rounded-xl active:scale-95 hover:bg-blue-50 transition">↻ Refresh</button></div><div id="transactions" class="space-y-3"></div></section>
 <section class="grid sm:grid-cols-2 gap-3 mt-6"><button onclick="openHistory()" class="p-4 rounded-2xl bg-white border text-left"><b>📅 Histori & Kalender</b><div class="text-xs text-slate-500 mt-1">Cek pemasukan & pengeluaran berdasarkan tanggal</div></button><button onclick="openExport()" class="p-4 rounded-2xl bg-white border text-left"><b>📊 Export Laporan</b><div class="text-xs text-slate-500 mt-1">PDF & Excel untuk laporan bulanan</div></button></section>
 </main>
 <nav class="fixed bottom-0 inset-x-0 bg-white/95 backdrop-blur border-t z-20"><div class="max-w-lg mx-auto h-16 flex items-center justify-around"><button class="text-blue-600 text-xs font-bold">⌂<br>Beranda</button><button onclick="openHistory()" class="text-slate-500 text-xs font-bold">📅<br>Histori</button><button onclick="openScanner()" class="text-slate-500 text-xs font-bold">📷<br>Scan AI</button><button onclick="openEntry('expense')" class="text-slate-500 text-xs font-bold">＋<br>Tambah</button></div></nav>
@@ -119,6 +119,13 @@ async function ensureProfile(user){
  if(error){console.error("Profil gagal disinkronkan:",error);setAppStatus("Profil pengguna belum tersimpan. Data transaksi tetap bisa digunakan.","warn")}
 }
 async function signOut(){try{await sb.auth.signOut()}finally{appReadyUserId=null;appInitUserId=null;appInitPromise=null;location.reload()}}
+async function refreshTransactions(){
+ const btn=document.getElementById("refreshBtn");
+ if(btn?.disabled)return;
+ if(btn){btn.disabled=true;btn.textContent="↻ Memuat...";btn.classList.add("opacity-60","cursor-wait")}
+ try{await loadTransactions(); if(btn)btn.textContent="✓ Terbarui"; setTimeout(()=>{if(btn)btn.textContent="↻ Refresh"},900)}
+ finally{if(btn){btn.disabled=false;btn.classList.remove("opacity-60","cursor-wait")}}
+}
 function toggleScope(){scope=scope==="personal"?"business":"personal";localStorage.setItem("kp_scope",scope);updateScopeUI();loadTransactions()}
 function updateScopeUI(){scopeBtnEl.textContent=scope==="personal"?"Personal":"Bisnis";chartScopeEl.textContent=scope==="personal"?"Personal":"Bisnis";entryScopeLabelEl.textContent=scope==="personal"?"Personal":"Bisnis";monthLabelEl.textContent=monthYearFmt(todayISO())}
 async function loadTransactions(){
