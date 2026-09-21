@@ -39,7 +39,7 @@ const requiredSnippets = [
   'user.is_anonymous',
   '.range(from,from+999)',
   'source:"manual"',
-  'source:"ocr"',
+  'source:"ai"',
   'type==="income"',
   'type==="expense"'
 ];
