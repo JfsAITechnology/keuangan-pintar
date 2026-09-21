@@ -173,7 +173,7 @@ const api = new Function(
   "Chart",
   "Tesseract",
   "alert",
-  appScript + "\nreturn {openEntry,toggleScope,loadTransactions,parseAmountCandidate,parseReceipt,isValidISODate,entryForm:document.getElementById('entryForm'),entryAmount:document.getElementById('entryAmount')};"
+  appScript + "\nreturn {openEntry,toggleScope,loadTransactions,parseReceipt,isValidISODate,entryForm:document.getElementById('entryForm'),entryAmount:document.getElementById('entryAmount')};"
 )(document, window, localStorage, supabase, Chart, Tesseract, alert);
 
 await new Promise((r) => setTimeout(r, 0));
