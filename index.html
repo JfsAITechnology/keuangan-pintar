@@ -331,13 +331,12 @@ let entryTypeInput=document.getElementById("entryType"),entryDate=document.getEl
 sb.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"){appReadyUserId=null;appInitUserId=null;appInitPromise=null;return}if(session)void showApp(session.user).catch(err=>{console.error("Gagal membuka aplikasi:",err);setAppStatus("Aplikasi gagal dimuat. Silakan refresh halaman.","error")})});
 (async()=>{const {data}=await sb.auth.getSession();if(data.session)showApp(data.session.user);else setAuthMode("login");updateScopeUI()})();
 </script>
-<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}</script>
-</body>
-</html>document.getElementById("receipt").addEventListener("change",async e=>{
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}
+document.getElementById("receipt").addEventListener("change",async e=>{
  const file=e.target.files[0];if(!file)return;
  const st=document.getElementById("scanStatus");st.classList.remove("hidden");
  document.getElementById("ocrResult").classList.add("hidden");
- if(file.size>10*1024*1024){st.innerHTML="<span class='text-red-600 font-bold'>Ukuran foto terlalu besar. Maksimal 10 MB.</span>";return}
+ if(file.size>25*1024*1024){st.innerHTML="<span class='text-red-600 font-bold'>Foto terlalu besar. Maksimal 25 MB.</span>";return}
  try{
    try{
      const {v,raw}=await scanWithAI(file);
@@ -456,6 +455,7 @@ let entryTypeInput=document.getElementById("entryType"),entryDate=document.getEl
 sb.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"){appReadyUserId=null;appInitUserId=null;appInitPromise=null;return}if(session)void showApp(session.user).catch(err=>{console.error("Gagal membuka aplikasi:",err);setAppStatus("Aplikasi gagal dimuat. Silakan refresh halaman.","error")})});
 (async()=>{const {data}=await sb.auth.getSession();if(data.session)showApp(data.session.user);else setAuthMode("login");updateScopeUI()})();
 </script>
-<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}</script>
+<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}
+</script>
 </body>
 </html>
