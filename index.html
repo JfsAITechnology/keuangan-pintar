@@ -306,6 +306,66 @@ async function saveOCR(){
    render();closeModal("scannerModal");currentOCR=null;await loadTransactions()
  }catch(err){console.error("Gagal menyimpan hasil Vision:",err);alert("Hasil scan gagal disimpan: "+(err.message||"kesalahan tidak diketahui"))}
 }
+function openHistory(){
+ const modal=document.getElementById("historyModal"); if(!modal)return;
+ modal.classList.remove("hidden"); modal.classList.add("flex");
+ const input=document.getElementById("historyDate"); if(input&&!input.value)input.value=todayISO();
+ renderHistoryDate();
+}
+function renderHistoryDate(){
+ const date=document.getElementById("historyDate")?.value||todayISO();
+ const list=document.getElementById("historyList"), summary=document.getElementById("historySummary"), label=document.getElementById("historyDateLabel");
+ if(label)label.textContent=dateFmt(date);
+ const rows=transactions.filter(x=>x.transaction_date===date);
+ const inc=rows.filter(x=>x.type==="income").reduce((a,x)=>a+Number(x.amount),0);
+ const exp=rows.filter(x=>x.type==="expense").reduce((a,x)=>a+Number(x.amount),0);
+ if(summary)summary.innerHTML='<div class="rounded-2xl bg-emerald-50 p-4"><div class="text-xs text-emerald-700">Pemasukan</div><div class="font-black text-emerald-700">'+rupiah(inc)+'</div></div><div class="rounded-2xl bg-red-50 p-4"><div class="text-xs text-red-700">Pengeluaran</div><div class="font-black text-red-700">'+rupiah(exp)+'</div></div>';
+ if(list)list.innerHTML=rows.length?rows.map(x=>'<div class="border rounded-2xl p-4 flex items-center gap-3"><div class="flex-1 min-w-0"><div class="font-bold truncate">'+esc(x.merchant||x.description||x.category)+'</div><div class="text-xs text-slate-500 mt-1">'+esc(x.category||"Lain-lain")+' • '+esc(x.description||"")+'</div></div><div class="font-black whitespace-nowrap '+(x.type==="income"?"text-emerald-600":"text-red-600")+'">'+(x.type==="income"?"+":"-")+rupiah(x.amount)+'</div></div>').join(""):'<div class="p-6 rounded-2xl bg-slate-50 text-center text-sm text-slate-500">Tidak ada transaksi pada tanggal ini.</div>';
+}
+function openExport(){
+ const modal=document.getElementById("exportModal"); if(!modal)return;
+ modal.classList.remove("hidden"); modal.classList.add("flex");
+ const input=document.getElementById("exportMonth"); if(input&&!input.value)input.value=todayISO().slice(0,7);
+ renderExportPreview();
+}
+function renderExportPreview(){
+ const month=document.getElementById("exportMonth")?.value||todayISO().slice(0,7);
+ const rows=transactions.filter(x=>String(x.transaction_date||"").slice(0,7)===month);
+ const inc=rows.filter(x=>x.type==="income").reduce((a,x)=>a+Number(x.amount),0);
+ const exp=rows.filter(x=>x.type==="expense").reduce((a,x)=>a+Number(x.amount),0);
+ const el=document.getElementById("exportPreview"); if(!el)return;
+ el.innerHTML='<div class="grid grid-cols-3 gap-2"><div class="rounded-xl bg-slate-50 p-3"><div class="text-[10px] text-slate-500">Transaksi</div><div class="font-black">'+rows.length+'</div></div><div class="rounded-xl bg-emerald-50 p-3"><div class="text-[10px] text-emerald-700">Pemasukan</div><div class="font-black text-emerald-700">'+rupiah(inc)+'</div></div><div class="rounded-xl bg-red-50 p-3"><div class="text-[10px] text-red-700">Pengeluaran</div><div class="font-black text-red-700">'+rupiah(exp)+'</div></div></div>';
+}
+document.getElementById("exportMonth")?.addEventListener("change",renderExportPreview);
+function exportRows(){
+ const month=document.getElementById("exportMonth")?.value||todayISO().slice(0,7);
+ return {month,rows:transactions.filter(x=>String(x.transaction_date||"").slice(0,7)===month)};
+}
+function exportPDF(){
+ const {month,rows}=exportRows();
+ if(!rows.length){alert("Tidak ada transaksi pada bulan yang dipilih.");return}
+ if(!window.jspdf?.jsPDF){alert("PDF belum siap. Muat ulang halaman lalu coba lagi.");return}
+ const inc=rows.filter(x=>x.type==="income").reduce((a,x)=>a+Number(x.amount),0), exp=rows.filter(x=>x.type==="expense").reduce((a,x)=>a+Number(x.amount),0);
+ const doc=new window.jspdf.jsPDF();
+ doc.setFontSize(18);doc.text("Keuangan Pintar",14,18);
+ doc.setFontSize(11);doc.text("Laporan "+month+" • "+(scope==="personal"?"Personal":"Bisnis"),14,27);
+ doc.text("Pemasukan: "+rupiah(inc),14,37);doc.text("Pengeluaran: "+rupiah(exp),14,44);doc.text("Saldo: "+rupiah(inc-exp),14,51);
+ let y=62;doc.setFontSize(9);doc.text("Tanggal",14,y);doc.text("Merchant/Keterangan",42,y);doc.text("Kategori",105,y);doc.text("Tipe",145,y);doc.text("Nominal",170,y);y+=6;
+ rows.forEach(x=>{if(y>280){doc.addPage();y=15}const name=String(x.merchant||x.description||"-").slice(0,30);doc.text(String(x.transaction_date||"-"),14,y);doc.text(name,42,y);doc.text(String(x.category||"-").slice(0,20),105,y);doc.text(x.type==="income"?"Masuk":"Keluar",145,y);doc.text(rupiah(x.amount),170,y);y+=6});
+ doc.save("keuangan-pintar-"+month+".pdf");
+}
+function exportExcel(){
+ const {month,rows}=exportRows();
+ if(!rows.length){alert("Tidak ada transaksi pada bulan yang dipilih.");return}
+ if(!window.XLSX){alert("Excel belum siap. Muat ulang halaman lalu coba lagi.");return}
+ const data=rows.map(x=>({Tanggal:x.transaction_date,Tipe:x.type==="income"?"Pemasukan":"Pengeluaran",Kategori:x.category||"",Merchant:x.merchant||"",Keterangan:x.description||"",Nominal:Number(x.amount),Sumber:x.source||"manual"}));
+ const inc=rows.filter(x=>x.type==="income").reduce((a,x)=>a+Number(x.amount),0), exp=rows.filter(x=>x.type==="expense").reduce((a,x)=>a+Number(x.amount),0);
+ const wb=XLSX.utils.book_new(), ws=XLSX.utils.json_to_sheet(data);
+ XLSX.utils.book_append_sheet(wb,ws,"Transaksi");
+ const summary=XLSX.utils.aoa_to_sheet([["Laporan Keuangan Pintar",month],["Pemasukan",inc],["Pengeluaran",exp],["Saldo",inc-exp]]);
+ XLSX.utils.book_append_sheet(wb,summary,"Ringkasan");
+ XLSX.writeFile(wb,"keuangan-pintar-"+month+".xlsx");
+}
 window.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal("entryModal");closeModal("scannerModal");closeModal("historyModal");closeModal("exportModal")}})
 let entryTypeInput=document.getElementById("entryType"),entryDate=document.getElementById("entryDate"),entryAmount=document.getElementById("entryAmount"),entryMerchant=document.getElementById("entryMerchant"),entryDescription=document.getElementById("entryDescription"),entryCategory=document.getElementById("entryCategory");
 sb.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"){appReadyUserId=null;appInitUserId=null;appInitPromise=null;return}if(session)void showApp(session.user).catch(err=>{console.error("Gagal membuka aplikasi:",err);setAppStatus("Aplikasi gagal dimuat. Silakan refresh halaman.","error")})});
