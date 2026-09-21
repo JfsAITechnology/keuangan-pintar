@@ -332,7 +332,7 @@ sb.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"){appReadyUse
 (async()=>{const {data}=await sb.auth.getSession();if(data.session)showApp(data.session.user);else setAuthMode("login");updateScopeUI()})();
 
 // Service worker + scanner input handler
-if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}
+if(typeof navigator!=="undefined" && "serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}
 document.getElementById("receipt").addEventListener("change",async e=>{
  const file=e.target.files[0];if(!file)return;
  const st=document.getElementById("scanStatus");st.classList.remove("hidden");
