@@ -37,7 +37,7 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
 <main class="max-w-6xl mx-auto px-4 py-5 pb-24">\n<div id="appStatus" class="hidden mb-4 rounded-2xl border p-4 text-sm"></div>
 <div class="flex justify-between items-end mb-5"><div><p class="text-sm text-slate-500">Ringkasan</p><h1 class="text-2xl font-black">Dashboard</h1></div><span id="monthLabel" class="text-xs bg-white border px-3 py-1.5 rounded-full"></span></div>
 <section class="grid md:grid-cols-3 gap-3 mb-5"><div class="bg-slate-900 text-white rounded-3xl p-5"><div class="text-sm text-slate-300">Saldo</div><div id="balance" class="text-3xl font-black mt-3">Rp0</div><div class="text-xs text-slate-400 mt-2">Pemasukan − pengeluaran bulan berjalan</div></div><div class="bg-white rounded-3xl p-5 border shadow-sm"><div class="text-sm text-slate-500">Pemasukan</div><div id="income" class="text-2xl font-black text-emerald-600 mt-3">Rp0</div></div><div class="bg-white rounded-3xl p-5 border shadow-sm"><div class="text-sm text-slate-500">Pengeluaran</div><div id="expense" class="text-2xl font-black text-red-600 mt-3">Rp0</div></div></section>
-<section class="grid sm:grid-cols-3 gap-3 mb-6"><button onclick="openScanner()" class="p-4 rounded-2xl bg-blue-600 text-white text-left shadow-sm"><b>📷 Scan Struk (AI)</b><div class="text-xs text-blue-100 mt-1">OCR → parsing → kategori</div></button><button onclick="openEntry('income')" class="p-4 rounded-2xl bg-white border text-left"><b>💵 Tambah Pemasukan</b><div class="text-xs text-slate-500 mt-1">Tanggal otomatis hari ini</div></button><button onclick="openEntry('expense')" class="p-4 rounded-2xl bg-white border text-left"><b>🧾 Tambah Pengeluaran</b><div class="text-xs text-slate-500 mt-1">Tanggal otomatis hari ini</div></button></section>
+<section class="grid sm:grid-cols-3 gap-3 mb-6"><button onclick="openScanner()" class="p-4 rounded-2xl bg-blue-600 text-white text-left shadow-sm"><b>📷 Scan Struk (AI)</b><div class="text-xs text-blue-100 mt-1">Gemini Vision → OCR → validasi</div></button><button onclick="openEntry('income')" class="p-4 rounded-2xl bg-white border text-left"><b>💵 Tambah Pemasukan</b><div class="text-xs text-slate-500 mt-1">Tanggal otomatis hari ini</div></button><button onclick="openEntry('expense')" class="p-4 rounded-2xl bg-white border text-left"><b>🧾 Tambah Pengeluaran</b><div class="text-xs text-slate-500 mt-1">Tanggal otomatis hari ini</div></button></section>
 <section class="bg-white rounded-3xl border p-5 mb-6"><div class="flex justify-between items-center mb-4"><div><h2 class="font-black">Breakdown Pengeluaran</h2><p class="text-xs text-slate-500">Kategori pada mode <span id="chartScope">Personal</span></p></div></div><div class="h-64"><canvas id="chart"></canvas></div></section>
 <section class="bg-white rounded-3xl border p-5 mb-6"><div class="mb-4"><h2 class="font-black">Rincian Harian</h2><p class="text-xs text-slate-500">Cek tanggal mana yang memiliki pemasukan dan pengeluaran.</p></div><div id="dailyBreakdown" class="space-y-2"></div></section>
 <section><div class="flex justify-between items-end mb-3"><div><h2 class="text-lg font-black">Transaksi Terbaru</h2><p class="text-xs text-slate-500">Tanggal transaksi otomatis mengikuti hari saat dicatat</p></div><button onclick="loadTransactions()" class="text-xs font-bold text-blue-600">Refresh</button></div><div id="transactions" class="space-y-3"></div></section>
@@ -56,7 +56,7 @@ body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,
 <div><label class="text-sm font-bold">Merchant / Sumber</label><input id="entryMerchant" class="mt-1 w-full p-3 rounded-xl border" placeholder="Contoh: Indomaret / Gaji"></div><div><label class="text-sm font-bold">Keterangan</label><textarea id="entryDescription" rows="3" class="mt-1 w-full p-3 rounded-xl border resize-none" placeholder="Catatan tambahan"></textarea></div>
 <button type="submit" id="saveEntryBtn" class="w-full py-4 rounded-2xl bg-slate-900 text-white font-black">Simpan</button></form></div></div>
 
-<div id="scannerModal" class="hidden fixed inset-0 z-50 modal items-end sm:items-center justify-center p-0 sm:p-4"><div class="fade bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl p-5 max-h-[92vh] overflow-y-auto"><div class="flex justify-between items-center mb-5"><div><h2 class="text-xl font-black">Scan Struk dengan AI</h2><p class="text-xs text-slate-500">OCR lokal di browser</p></div><button onclick="closeModal('scannerModal')" class="w-9 h-9 bg-slate-100 rounded-xl">✕</button></div><label for="receipt" class="block border-2 border-dashed border-blue-200 bg-blue-50 rounded-3xl p-8 text-center cursor-pointer"><div class="text-5xl">📷</div><b class="block mt-3">Ambil / pilih foto struk</b><span class="text-xs text-slate-500">Jangan upload dokumen yang berisi data sensitif selain yang diperlukan.</span></label><input id="receipt" type="file" accept="image/*" capture="environment" class="hidden"><div id="scanStatus" class="hidden mt-4 p-4 bg-slate-50 rounded-2xl text-sm"></div><div id="ocrResult" class="hidden mt-4"></div></div></div>
+<div id="scannerModal" class="hidden fixed inset-0 z-50 modal items-end sm:items-center justify-center p-0 sm:p-4"><div class="fade bg-white w-full sm:max-w-lg rounded-t-3xl sm:rounded-3xl p-5 max-h-[92vh] overflow-y-auto"><div class="flex justify-between items-center mb-5"><div><h2 class="text-xl font-black">Scan Struk dengan AI</h2><p class="text-xs text-slate-500">Gemini Vision + OCR lokal • verifikasi sebelum simpan</p></div><button onclick="closeModal('scannerModal')" class="w-9 h-9 bg-slate-100 rounded-xl">✕</button></div><label for="receipt" class="block border-2 border-dashed border-blue-200 bg-blue-50 rounded-3xl p-8 text-center cursor-pointer"><div class="text-5xl">📷</div><b class="block mt-3">Ambil / pilih foto struk</b><span class="text-xs text-slate-500">Jangan upload dokumen yang berisi data sensitif selain yang diperlukan.</span></label><input id="receipt" type="file" accept="image/*" capture="environment" class="hidden"><div id="scanStatus" class="hidden mt-4 p-4 bg-slate-50 rounded-2xl text-sm"></div><div id="ocrResult" class="hidden mt-4"></div></div></div>
 
 <script>
 const SUPABASE_URL="https://evtkeyfjgqwarsmlzrkh.supabase.co";
@@ -207,18 +207,80 @@ function showOCR(p,raw){
  '<details><summary class="text-xs font-bold cursor-pointer">Lihat teks OCR</summary><pre class="text-[10px] whitespace-pre-wrap mt-2 bg-white p-3 rounded-xl border">'+esc(raw)+'</pre></details></div><button onclick="saveOCR()" class="w-full mt-3 py-4 rounded-2xl bg-blue-600 text-white font-black">Simpan setelah diperiksa</button>'
 }
 let currentOCR=null;
-async function runOCR(file){
- const st=document.getElementById("scanStatus");st.innerHTML="<b>🤖 Memindai struk...</b><div class='text-xs text-slate-500 mt-1'>Foto diperjelas lalu dibaca OCR.</div>";
- const prepared=await preprocessReceipt(file);
- const result=await Tesseract.recognize(prepared,"ind",{logger:m=>{if(m.status==="recognizing text")st.innerHTML="<b>🤖 Membaca struk...</b><div class='text-xs text-slate-500 mt-1'>Progress "+Math.round((m.progress||0)*100)+"%</div>"}});
- return result.data.text||"";
+function blobToDataURL(blob){
+ return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result||""));r.onerror=reject;r.readAsDataURL(blob)})
 }
+async function runOCR(file){
+ const st=document.getElementById("scanStatus");
+ st.innerHTML="<b>🤖 Tahap 1/2 — Membaca struk...</b><div class='text-xs text-slate-500 mt-1'>Foto diperjelas lalu dibaca OCR lokal.</div>";
+ const prepared=await preprocessReceipt(file);
+ const result=await Tesseract.recognize(prepared,"ind",{logger:m=>{
+   if(m.status==="recognizing text")st.innerHTML="<b>🤖 Tahap 1/2 — OCR lokal</b><div class='text-xs text-slate-500 mt-1'>Progress "+Math.round((m.progress||0)*100)+"%</div>"
+ }});
+ return {prepared,raw:result.data.text||""};
+}
+async function runGeminiVision(prepared,raw){
+ const dataUrl=await blobToDataURL(prepared);
+ const imageBase64=dataUrl.split(",")[1]||"";
+ if(!imageBase64)throw new Error("Foto gagal diproses.");
+ const {data,error}=await sb.functions.invoke("keuangan-pintar-vision",{body:{
+   image_base64:imageBase64,
+   mime_type:"image/jpeg",
+   ocr_text:raw
+ }});
+ if(error)throw error;
+ if(!data||data.error)throw new Error(data?.error||"Gemini Vision tidak mengembalikan hasil.");
+ return data;
+}
+function showVisionResult(p,raw,visionOK=true){
+ currentOCR=p;
+ const el=document.getElementById("ocrResult");el.classList.remove("hidden");
+ const confidence=Math.round((Number(p.confidence)||0)*100);
+ const badge=visionOK
+   ?'<span class="text-xs bg-emerald-50 text-emerald-700 px-2 py-1 rounded-lg">Gemini Vision '+confidence+'%</span>'
+   :'<span class="text-xs bg-amber-50 text-amber-700 px-2 py-1 rounded-lg">Fallback OCR — wajib diperiksa</span>';
+ el.innerHTML='<div class="p-4 rounded-2xl bg-slate-50 space-y-3"><div class="flex justify-between gap-2"><b>Hasil pembacaan AI</b>'+badge+'</div>'+
+ '<div class="text-xs text-slate-500 bg-white border rounded-xl p-3">'+esc(p.reason||"Periksa hasil sebelum menyimpan.")+'</div>'+
+ '<label class="block text-xs font-bold text-slate-500">Nama toko / merchant<input id="ocrMerchant" class="w-full mt-1 p-3 rounded-xl border bg-white" value="'+esc(p.merchant||"")+'"></label>'+
+ '<label class="block text-xs font-bold text-slate-500">Nominal total<input id="ocrAmount" inputmode="numeric" class="w-full mt-1 p-3 rounded-xl border bg-white font-black" value="'+(p.amount?Number(p.amount).toLocaleString("id-ID"):"")+'"></label>'+
+ '<label class="block text-xs font-bold text-slate-500">Kategori<select id="ocrCategory" class="w-full mt-1 p-3 rounded-xl border bg-white">'+["Belanja Keperluan Rumah Bulanan","Stok Bahan Mentah","Tagihan & Utilitas","Servis & Perbaikan","Lain-lain"].map(x=>'<option '+(x===p.category?"selected":"")+'>'+esc(x)+"</option>").join("")+'</select></label>'+
+ '<label class="block text-xs font-bold text-slate-500">Tanggal<input id="ocrDate" type="date" class="w-full mt-1 p-3 rounded-xl border bg-white" value="'+(isValidISODate(p.date)?p.date:todayISO())+'"></label>'+
+ '<details><summary class="text-xs font-bold cursor-pointer">Lihat teks OCR mentah</summary><pre class="text-[10px] whitespace-pre-wrap mt-2 bg-white p-3 rounded-xl border">'+esc(raw)+'</pre></details></div>'+
+ '<button onclick="saveOCR()" class="w-full mt-3 py-4 rounded-2xl bg-blue-600 text-white font-black">Simpan setelah diperiksa</button>';
+}
+let currentOCR=null;
 document.getElementById("receipt").addEventListener("change",async e=>{
- const file=e.target.files[0];if(!file)return;const st=document.getElementById("scanStatus");st.classList.remove("hidden");
+ const file=e.target.files[0];if(!file)return;
+ const st=document.getElementById("scanStatus");st.classList.remove("hidden");
+ document.getElementById("ocrResult").classList.add("hidden");
  if(typeof Tesseract==="undefined"){st.innerHTML="<span class='text-red-600 font-bold'>Mesin OCR belum termuat. Gunakan input manual.</span>";return}
  if(file.size>10*1024*1024){st.innerHTML="<span class='text-red-600 font-bold'>Ukuran foto terlalu besar. Maksimal 10 MB.</span>";return}
- try{const raw=await runOCR(file);const parsed=parseReceipt(raw);st.innerHTML="<b class='text-emerald-600'>Pembacaan selesai.</b><div class='text-xs text-slate-500 mt-1'>Periksa nominal, toko, kategori, dan tanggal sebelum menyimpan.</div>";showOCR(parsed,raw)}
- catch(err){console.error("OCR gagal:",err);st.innerHTML="<span class='text-red-600 font-bold'>OCR gagal. Silakan foto ulang dengan cahaya cukup atau gunakan input manual.</span>"}
+ try{
+   const {prepared,raw}=await runOCR(file);
+   st.innerHTML="<b>🤖 Tahap 2/2 — Gemini Vision menganalisis...</b><div class='text-xs text-slate-500 mt-1'>AI membaca foto langsung dan menentukan total akhir.</div>";
+   try{
+     const v=await runGeminiVision(prepared,raw);
+     showVisionResult({
+       type:"expense",
+       amount:v.total_amount||0,
+       category:v.category||"Lain-lain",
+       merchant:v.merchant||"",
+       date:v.date||todayISO(),
+       confidence:Number(v.confidence)||0,
+       reason:v.reason||""
+     },raw,true);
+     st.innerHTML="<b class='text-emerald-600'>Gemini Vision selesai.</b><div class='text-xs text-slate-500 mt-1'>Periksa hasil sebelum menyimpan.</div>";
+   }catch(aiErr){
+     console.warn("Gemini Vision gagal, fallback OCR:",aiErr);
+     const parsed=parseReceipt(raw);
+     parsed.reason="Gemini Vision belum tersedia/bermasalah. Hasil ini berasal dari OCR lokal dan harus diperiksa.";
+     showVisionResult(parsed,raw,false);
+     st.innerHTML="<b class='text-amber-600'>Vision AI belum berhasil.</b><div class='text-xs text-slate-500 mt-1'>Aplikasi memakai fallback OCR. Jika API key Gemini sudah dipasang, coba scan lagi.</div>";
+   }
+ }catch(err){
+   console.error("Scan struk gagal:",err);
+   st.innerHTML="<span class='text-red-600 font-bold'>Scan gagal. Silakan foto ulang dengan cahaya cukup.</span>";
+ }
 });
 async function saveOCR(){
  const merchant=document.getElementById("ocrMerchant")?.value.trim()||"Merchant dari struk";
@@ -226,12 +288,21 @@ async function saveOCR(){
  const category=document.getElementById("ocrCategory")?.value||"Lain-lain";
  const date=document.getElementById("ocrDate")?.value||todayISO();
  if(!amount){alert("Nominal total belum benar. Periksa atau isi nominal secara manual.");return}
- const {data:{user},error:authError}=await sb.auth.getUser();if(authError||!user||user.is_anonymous){alert("Sesi login sudah tidak aktif. Silakan masuk lagi.");return}
+ const {data:{user},error:authError}=await sb.auth.getUser();
+ if(authError||!user||user.is_anonymous){alert("Sesi login sudah tidak aktif. Silakan masuk lagi.");return}
  try{
-  const {data,error}=await sb.from("kp_transactions").insert({user_id:user.id,scope,type:"expense",amount:Number(amount),category,merchant,transaction_date:isValidISODate(date)?date:todayISO(),description:"Scan struk — dikonfirmasi pengguna",source:"ocr",ai_confidence:currentOCR?.confidence||0.5,receipt_text:currentOCR?.text||""}).select("*").single();
-  if(error)throw error;if(!data)throw new Error("Transaksi tidak dikembalikan oleh database.");
-  transactions=[data,...transactions.filter(x=>x.id!==data.id)];render();closeModal("scannerModal");currentOCR=null;await loadTransactions()
- }catch(err){console.error("Gagal menyimpan OCR:",err);alert("Hasil scan gagal disimpan: "+(err.message||"kesalahan tidak diketahui"))}
+   const {data,error}=await sb.from("kp_transactions").insert({
+     user_id:user.id,scope,type:"expense",amount:Number(amount),category,merchant,
+     transaction_date:isValidISODate(date)?date:todayISO(),
+     description:"Scan struk — Gemini Vision — dikonfirmasi pengguna",
+     source:"ai",ai_confidence:Number(currentOCR?.confidence)||0,
+     receipt_text:currentOCR?.text||""
+   }).select("*").single();
+   if(error)throw error;
+   if(!data)throw new Error("Transaksi tidak dikembalikan oleh database.");
+   transactions=[data,...transactions.filter(x=>x.id!==data.id)];
+   render();closeModal("scannerModal");currentOCR=null;await loadTransactions()
+ }catch(err){console.error("Gagal menyimpan hasil Vision:",err);alert("Hasil scan gagal disimpan: "+(err.message||"kesalahan tidak diketahui"))}
 }
 window.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal("entryModal");closeModal("scannerModal");closeModal("historyModal");closeModal("exportModal")}})
 let entryTypeInput=document.getElementById("entryType"),entryDate=document.getElementById("entryDate"),entryAmount=document.getElementById("entryAmount"),entryMerchant=document.getElementById("entryMerchant"),entryDescription=document.getElementById("entryDescription"),entryCategory=document.getElementById("entryCategory");
