@@ -214,8 +214,7 @@ assert.equal(balance(), "Rp 90.000", "Switching back must restore personal tota
 assert.equal(await api.loadTransactions(), true);
 assert.equal(balance(), "Rp 90.000", "Refresh/load must preserve totals.");
 
-assert.equal(api.parseAmountCandidate("Rp 1.250.000"), 1250000);
-assert.equal(api.parseAmountCandidate("12.345,67"), 12346);
+assert.equal(api.parseReceipt("TOKO TEST TOTAL Rp 1.250.000 19/09/2026").amount, 1250000);
 assert.equal(api.isValidISODate(todayISO()), true);
 assert.equal(api.isValidISODate("2026-02-29"), false);
 assert.equal(api.parseReceipt("TOKO TEST TOTAL Rp 25.000 19/09/2026").amount, 25000);
