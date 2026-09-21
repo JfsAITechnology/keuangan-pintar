@@ -237,6 +237,46 @@ async function runOCR(file){
  }
  return {prepared,raw};
 }
+async function runGeminiVision(prepared,raw){
+  const dataUrl=await blobToDataURL(prepared);
+  const comma=dataUrl.indexOf(",");
+  if(comma<0)throw new Error("Foto hasil preprocessing tidak valid.");
+  const imageBase64=dataUrl.slice(comma+1);
+  const mimeType=String(prepared.type||"image/jpeg");
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session?.access_token)throw new Error("Sesi login tidak aktif.");
+  const resp=await fetch(SUPABASE_URL+"/functions/v1/keuangan-pintar-vision",{
+    method:"POST",
+    headers:{
+      "Authorization":"Bearer "+session.access_token,
+      "apikey":SUPABASE_KEY,
+      "Content-Type":"application/json"
+    },
+    body:JSON.stringify({image_base64:imageBase64,mime_type:mimeType,ocr_text:String(raw||"").slice(0,12000)})
+  });
+  const body=await resp.text();
+  let json={};
+  try{json=JSON.parse(body)}catch(_){throw new Error("Respons AI tidak valid ("+resp.status+").")}
+  if(!resp.ok)throw new Error(json.error||"Gemini Vision gagal ("+resp.status+").");
+  return json;
+}
+function showVisionResult(p,raw,isAI=true){
+  currentOCR={...p,text:String(raw||""),confidence:Number(p.confidence)||0};
+  const el=document.getElementById("ocrResult");if(!el)return;
+  el.classList.remove("hidden");
+  const conf=Math.round((Number(p.confidence)||0)*100);
+  const source=isAI?"Gemini Vision AI":"OCR lokal (fallback)";
+  const reason=p.reason?esc(p.reason):"Periksa hasil sebelum menyimpan.";
+  el.innerHTML='<div class="p-4 rounded-2xl bg-slate-50 space-y-3">'+
+    '<div class="flex justify-between gap-3"><b>Hasil '+source+'</b><span class="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded-lg">Confidence '+conf+'%</span></div>'+
+    '<div class="text-xs text-slate-600 bg-white border rounded-xl p-3">'+reason+'</div>'+
+    '<label class="block text-xs font-bold text-slate-500">Nama toko / merchant<input id="ocrMerchant" class="w-full mt-1 p-3 rounded-xl border bg-white" value="'+esc(p.merchant||"")+'"></label>'+
+    '<label class="block text-xs font-bold text-slate-500">Nominal total<input id="ocrAmount" inputmode="numeric" class="w-full mt-1 p-3 rounded-xl border bg-white font-black" value="'+(Number(p.amount)||0)+'"></label>'+
+    '<label class="block text-xs font-bold text-slate-500">Kategori<select id="ocrCategory" class="w-full mt-1 p-3 rounded-xl border bg-white">'+["Belanja Keperluan Rumah Bulanan","Stok Bahan Mentah","Tagihan & Utilitas","Servis & Perbaikan","Lain-lain"].map(x=>'<option '+(x===(p.category||"Lain-lain")?"selected":"")+'>'+esc(x)+"</option>").join("")+'</select></label>'+
+    '<label class="block text-xs font-bold text-slate-500">Tanggal<input id="ocrDate" type="date" class="w-full mt-1 p-3 rounded-xl border bg-white" value="'+(isValidISODate(p.date)?p.date:"")+'"></label>'+
+    '<details><summary class="text-xs font-bold cursor-pointer">Lihat teks OCR</summary><pre class="text-[10px] whitespace-pre-wrap mt-2 bg-white p-3 rounded-xl border">'+esc(raw||"Tidak tersedia")+'</pre></details></div>'+
+    '<button onclick="saveOCR()" class="w-full mt-3 py-4 rounded-2xl bg-blue-600 text-white font-black">Simpan setelah diperiksa</button>';
+}
 async function scanWithAI(file){
  const {prepared,raw}=await runOCR(file);
  const st=document.getElementById("scanStatus");
