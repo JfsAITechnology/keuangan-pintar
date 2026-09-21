@@ -247,9 +247,7 @@ function showVisionResult(p,raw,visionOK=true){
  '<label class="block text-xs font-bold text-slate-500">Tanggal<input id="ocrDate" type="date" class="w-full mt-1 p-3 rounded-xl border bg-white" value="'+(isValidISODate(p.date)?p.date:todayISO())+'"></label>'+
  '<details><summary class="text-xs font-bold cursor-pointer">Lihat teks OCR mentah</summary><pre class="text-[10px] whitespace-pre-wrap mt-2 bg-white p-3 rounded-xl border">'+esc(raw)+'</pre></details></div>'+
  '<button onclick="saveOCR()" class="w-full mt-3 py-4 rounded-2xl bg-blue-600 text-white font-black">Simpan setelah diperiksa</button>';
-}
-let currentOCR=null;
-document.getElementById("receipt").addEventListener("change",async e=>{
+}document.getElementById("receipt").addEventListener("change",async e=>{
  const file=e.target.files[0];if(!file)return;
  const st=document.getElementById("scanStatus");st.classList.remove("hidden");
  document.getElementById("ocrResult").classList.add("hidden");
