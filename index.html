@@ -342,7 +342,7 @@ document.getElementById("chatBookkeeperForm").addEventListener("submit",async e=
   const resp=await fetch(SUPABASE_URL+"/functions/v1/keuangan-pintar-chat",{method:"POST",headers:{"Authorization":"Bearer "+session.access_token,"apikey":SUPABASE_KEY,"Content-Type":"application/json"},body:JSON.stringify({message:msg,scope})});
   const body=await resp.text();let json={};try{json=JSON.parse(body)}catch(_){throw new Error("Respons JFS AI tidak valid ("+resp.status+").")}
   if(!resp.ok)throw new Error(json.error||"JFS AI gagal ("+resp.status+").");
-  showChatBookkeeperResult(json);
+  if(document.getElementById("chatMessages")?.dataset.askMode==="1"){const r=document.getElementById("chatBookkeeperResult");r.classList.remove("hidden");r.innerHTML='<div class="p-4 rounded-2xl bg-blue-50 text-blue-900 text-sm"><b>JFS AI:</b> '+esc(json.reason||json.description||"Saya memahami pertanyaan Anda. Jika Anda ingin mencatat transaksi, gunakan menu Ceritakan ke JFS AI.")+'</div>';renderChatMessage(json.reason||json.description||"Silakan lanjutkan pertanyaan Anda.","ai");}else{showChatBookkeeperResult(json);}
  }catch(err){console.error("Bookkeeper chat gagal:",err);resultEl.classList.remove("hidden");resultEl.innerHTML='<div class="p-4 rounded-2xl bg-red-50 text-red-700 text-sm">'+esc(err.message||"JFS AI gagal memproses cerita.")+'</div>'}
  finally{btn.disabled=false;btn.textContent="🤖 Analisis & Catat"}
 });
