@@ -455,7 +455,29 @@ function exportExcel(){
 }
 window.addEventListener("keydown",e=>{if(e.key==="Escape"){closeModal("entryModal");closeModal("scannerModal");closeModal("historyModal");closeModal("exportModal")}})
 let entryTypeInput=document.getElementById("entryType"),entryDate=document.getElementById("entryDate"),entryAmount=document.getElementById("entryAmount"),entryMerchant=document.getElementById("entryMerchant"),entryDescription=document.getElementById("entryDescription"),entryCategory=document.getElementById("entryCategory");
-sb.auth.onAuthStateChange((event,session)=>{if(event==="SIGNED_OUT"){appReadyUserId=null;appInitUserId=null;appInitPromise=null;return}if(session)void showApp(session.user).catch(err=>{console.error("Gagal membuka aplikasi:",err);setAppStatus("Aplikasi gagal dimuat. Silakan refresh halaman.","error")})});
+sb.auth.onAuthStateChange((event,session)=>{
+ if(event==="SIGNED_OUT"){appReadyUserId=null;appInitUserId=null;appInitPromise=null;hideSubscriptionGate();document.getElementById("appView")?.classList.add("hidden");document.getElementById("authView")?.classList.remove("hidden");return}
+ if(session)void showApp(session.user).catch(err=>{
+   console.error("Gagal membuka aplikasi:",err);
+   hideSubscriptionGate();
+   document.getElementById("appView")?.classList.add("hidden");
+   document.getElementById("authView")?.classList.remove("hidden");
+   const msg=document.getElementById("authMsg");if(msg)msg.textContent="Sesi berhasil dibuat, tetapi pemeriksaan akses belum selesai. Silakan coba Masuk lagi.";
+ });
+});
+(async()=>{
+ try{
+  const {data,error}=await sb.auth.getSession();
+  if(error)throw error;
+  if(data.session)await showApp(data.session.user);else setAuthMode("login");
+ }catch(err){
+  console.error("Startup auth error:",err);
+  document.getElementById("appView")?.classList.add("hidden");
+  document.getElementById("authView")?.classList.remove("hidden");
+  setAuthMode("login");
+ }
+ updateScopeUI();
+})();
 (async()=>{const {data}=await sb.auth.getSession();if(data.session)showApp(data.session.user);else setAuthMode("login");updateScopeUI()})();
 
 // Service worker + scanner input handler
