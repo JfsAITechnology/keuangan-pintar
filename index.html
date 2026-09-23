@@ -170,7 +170,7 @@ async function refreshTransactions(){
  finally{if(btn){btn.disabled=false;btn.classList.remove("opacity-60","cursor-wait")}}
 }
 function toggleScope(){scope=scope==="personal"?"business":"personal";localStorage.setItem("kp_scope",scope);updateScopeUI();loadTransactions()}
-function updateScopeUI(){scopeBtnEl.textContent=scope==="personal"?"Personal":"Bisnis";chartScopeEl.textContent=scope==="personal"?"Personal":"Bisnis";entryScopeLabelEl.textContent=scope==="personal"?"Personal":"Bisnis";monthLabelEl.textContent=monthYearFmt(todayISO())}
+function updateScopeUI(){const label=scope==="personal"?"Personal":"Bisnis";if(scopeBtnEl)scopeBtnEl.textContent=label;if(chartScopeEl)chartScopeEl.textContent=label;if(entryScopeLabelEl)entryScopeLabelEl.textContent=label;if(monthLabelEl)monthLabelEl.textContent=monthYearFmt(todayISO())}
 async function loadTransactions(){
  try{
   const access=await checkKPSubscription();
