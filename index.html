@@ -126,13 +126,24 @@ let kpSubscription=null;
 function setSubscriptionWhatsApp(){const a=document.getElementById('subscriptionWa');if(!a)return;const msg=encodeURIComponent('Halo JFS AI, saya ingin mengaktifkan kembali Keuangan Pintar.');a.href=JFS_SUBSCRIPTION_WHATSAPP?('https://wa.me/'+JFS_SUBSCRIPTION_WHATSAPP.replace(/\D/g,'')+'?text='+msg):('https://wa.me/?text='+msg)}
 function showSubscriptionGate(access){const gate=document.getElementById('subscriptionGate');if(!gate)return;gate.classList.add('show');const text=document.getElementById('subscriptionGateText');if(text)text.textContent=access?.status==='expired'?'Masa gratis/berlangganan Anda telah berakhir. Data dan histori keuangan Anda tetap tersimpan aman. Aktifkan kembali untuk melanjutkan.':'Akses Keuangan Pintar belum aktif. Data Anda tetap aman dan dapat dilanjutkan setelah aktivasi.';setSubscriptionWhatsApp()}
 function hideSubscriptionGate(){document.getElementById('subscriptionGate')?.classList.remove('show')}
-async function checkKPSubscription(){const {data,error}=await sb.rpc('kp_get_access');if(error)throw error;kpSubscription=data;return data}
+async function checkKPSubscription(){
+ const {data:{session},error:sessionError}=await sb.auth.getSession();
+ if(sessionError)throw sessionError;
+ if(!session?.user)return {allowed:false,status:"unauthenticated"};
+ const {data,error}=await sb.rpc("kp_get_access");
+ if(error)throw error;
+ kpSubscription=data;return data
+}
 
 async function showApp(user){
  if(!user)return;
- if(user.is_anonymous){await sb.auth.signOut();location.reload();return}
+ if(user.is_anonymous){await sb.auth.signOut();return}
+ document.getElementById("authView").classList.add("hidden");
  const access=await checkKPSubscription();
- if(!access?.allowed){document.getElementById("authView").classList.add("hidden");document.getElementById("appView").classList.add("hidden");showSubscriptionGate(access);return}
+ if(!access?.allowed){
+   document.getElementById("appView").classList.add("hidden");
+   showSubscriptionGate(access);return;
+ }
  hideSubscriptionGate();
  document.getElementById("authView").classList.add("hidden");
  document.getElementById("appView").classList.remove("hidden");
