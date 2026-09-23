@@ -108,7 +108,7 @@ body.kp-dark .modal .bg-white{box-shadow:0 25px 80px rgba(0,0,0,.5)}
 <div class="w-full max-w-md bg-white rounded-3xl shadow-xl border border-slate-100 p-6">
 <div class="flex items-center gap-4 mb-7"><img src="assets/jfs-ai-robot.svg.png?v=2" alt="JFS AI Technology" class="w-24 h-auto object-contain shrink-0"><div><div class="font-black text-xl">Keuangan Pintar</div><div class="text-xs text-slate-500">JFS AI • Personal & Business Finance</div></div></div>
 <div class="flex bg-slate-100 rounded-xl p-1 mb-5"><button id="loginTab" onclick="setAuthMode('login')" class="flex-1 py-2 rounded-lg bg-white font-bold text-sm">Masuk</button><button id="signupTab" onclick="setAuthMode('signup')" class="flex-1 py-2 rounded-lg text-slate-500 font-bold text-sm">Daftar</button></div>
-<form id="authForm" class="space-y-4"><div id="nameWrap" class="hidden"><label class="text-sm font-bold">Nama</label><input id="authName" class="mt-1 w-full p-3 rounded-xl border" placeholder="Nama Anda"></div><div><label class="text-sm font-bold">Email</label><input id="authEmail" type="email" required class="mt-1 w-full p-3 rounded-xl border" placeholder="nama@email.com"></div><div><label class="text-sm font-bold">Password</label><input id="authPassword" type="password" required minlength="6" class="mt-1 w-full p-3 rounded-xl border" placeholder="Minimal 6 karakter"></div><button id="authSubmit" class="w-full py-3.5 rounded-2xl bg-slate-900 text-white font-black">Masuk</button></form>
+<form id="authForm" class="space-y-4"><div id="nameWrap" class="hidden"><label class="text-sm font-bold">Nama</label><input id="authName" class="mt-1 w-full p-3 rounded-xl border" placeholder="Nama Anda"></div><div><label class="text-sm font-bold">Email</label><input id="authEmail" type="email" required class="mt-1 w-full p-3 rounded-xl border" placeholder="nama@email.com"></div><div><label class="text-sm font-bold">Password</label><input id="authPassword" type="password" required minlength="6" class="mt-1 w-full p-3 rounded-xl border" placeholder="Minimal 6 karakter"></div><label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input id="rememberEmail" type="checkbox" class="w-4 h-4 rounded" checked><span>Simpan email di perangkat ini</span></label><button id="authSubmit" class="w-full py-3.5 rounded-2xl bg-slate-900 text-white font-black">Masuk</button></form>
 <p id="authMsg" class="text-sm mt-4 text-center text-slate-500"></p><div class="mt-6 p-3 rounded-2xl bg-blue-50 text-blue-800 text-xs">Data transaksi disimpan di Supabase dan dilindungi Row Level Security berdasarkan akun Anda.</div>
 </div></div>
 
@@ -173,7 +173,9 @@ function setAuthMode(m){authMode=m;document.getElementById("nameWrap").classList
 async function authSubmit(e){
  e.preventDefault();
  const email=authEmailEl.value.trim(),password=authPasswordEl.value,name=authNameEl.value.trim();
+ const remember=document.getElementById("rememberEmail")?.checked!==false;
  if(!email||!password)return;
+ if(remember)localStorage.setItem("kp_saved_email",email);else localStorage.removeItem("kp_saved_email");
  authMsgEl.textContent="Memproses...";authMsgEl.className="text-sm mt-4 text-center text-slate-500";
  try{
   const r=authMode==="login"
@@ -187,6 +189,8 @@ async function authSubmit(e){
  }catch(err){console.error("Auth gagal:",err);authMsgEl.textContent=err.message||"Gagal memproses autentikasi.";authMsgEl.className="text-sm mt-4 text-center text-red-600"}
 }
 document.getElementById("authForm").addEventListener("submit",authSubmit);
+const savedEmail=localStorage.getItem("kp_saved_email")||"";
+if(savedEmail){authEmailEl.value=savedEmail;const rememberEl=document.getElementById("rememberEmail");if(rememberEl)rememberEl.checked=true;}
 
 function kpApplyTheme(){const dark=localStorage.getItem("kp_theme")==="dark";document.body.classList.toggle("kp-dark",dark);const b=document.getElementById("themeToggle");if(b)b.textContent=dark?"☀️":"🌙";document.documentElement.style.colorScheme=dark?"dark":"light"}
 function toggleKPTheme(){localStorage.setItem("kp_theme",localStorage.getItem("kp_theme")==="dark"?"light":"dark");kpApplyTheme()}
