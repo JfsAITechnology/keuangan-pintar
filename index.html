@@ -182,7 +182,8 @@ async function authSubmit(e){
   if(r.error)throw r.error;
   if(authMode==="signup"&&!r.data.session){authMsgEl.textContent="Akun dibuat. Jika konfirmasi email aktif, cek email lalu masuk.";authMsgEl.className="text-sm mt-4 text-center text-emerald-600";return}
   if(!r.data.user)throw new Error("Akun tidak dikembalikan oleh layanan autentikasi.");
-  await showApp(r.data.user);
+  authMsgEl.textContent="Login berhasil. Membuka Keuangan Pintar...";
+  authMsgEl.className="text-sm mt-4 text-center text-emerald-600";
  }catch(err){console.error("Auth gagal:",err);authMsgEl.textContent=err.message||"Gagal memproses autentikasi.";authMsgEl.className="text-sm mt-4 text-center text-red-600"}
 }
 document.getElementById("authForm").addEventListener("submit",authSubmit);
@@ -570,8 +571,6 @@ sb.auth.onAuthStateChange((event,session)=>{
  }
  updateScopeUI();
 })();
-(async()=>{const {data}=await sb.auth.getSession();if(data.session)showApp(data.session.user);else setAuthMode("login");updateScopeUI()})();
-
 // Service worker + scanner input handler
 if(typeof navigator!=="undefined" && "serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}))}
 document.getElementById("receipt").addEventListener("change",async e=>{
