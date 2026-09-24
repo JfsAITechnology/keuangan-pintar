@@ -169,7 +169,28 @@ function setAppStatus(message,kind="info"){
  const styles={error:"bg-red-50 border-red-200 text-red-700",warn:"bg-amber-50 border-amber-200 text-amber-800",success:"bg-emerald-50 border-emerald-200 text-emerald-700",info:"bg-blue-50 border-blue-200 text-blue-700"};
  el.className="mb-4 rounded-2xl border p-4 text-sm "+(styles[kind]||styles.info);el.textContent=message;
 }
-function setAuthMode(m){authMode=m;document.getElementById("nameWrap").classList.toggle("hidden",m==="login");document.getElementById("loginTab").className=m==="login"?"flex-1 py-2 rounded-lg bg-white font-bold text-sm":"flex-1 py-2 rounded-lg text-slate-500 font-bold text-sm";document.getElementById("signupTab").className=m==="signup"?"flex-1 py-2 rounded-lg bg-white font-bold text-sm":"flex-1 py-2 rounded-lg text-slate-500 font-bold text-sm";document.getElementById("authSubmit").textContent=m==="login"?"Masuk":"Buat Akun";document.getElementById("authMsg").textContent="";document.getElementById("authMsg").className="text-sm mt-4 text-center text-slate-500"}
+const JFS_SUPER_ADMIN_EMAILS=["johanelindahp@gmail.com","jfs.ai.technology@gmail.com"];
+function isJfsSuperAdminEmail(email){return JFS_SUPER_ADMIN_EMAILS.includes(String(email||"").trim().toLowerCase())}
+function updateSuperAdminLoginUI(){
+ const isAdmin=isJfsSuperAdminEmail(authEmailEl.value);
+ const signupTab=document.getElementById("signupTab"),nameWrap=document.getElementById("nameWrap");
+ if(signupTab)signupTab.classList.toggle("hidden",isAdmin);
+ if(nameWrap&&isAdmin)nameWrap.classList.add("hidden");
+ if(isAdmin&&authMode==="signup")setAuthMode("login");
+ if(isAdmin){authMsgEl.textContent="Super Admin JFS AI terdeteksi — gunakan Masuk.";authMsgEl.className="text-sm mt-4 text-center text-blue-600 font-bold"}
+}
+function setAuthMode(m){
+ authMode=m;
+ const isAdmin=isJfsSuperAdminEmail(authEmailEl?.value);
+ if(isAdmin)m="login";
+ authMode=m;
+ document.getElementById("nameWrap").classList.toggle("hidden",m==="login");
+ document.getElementById("loginTab").className=m==="login"?"flex-1 py-2 rounded-lg bg-white font-bold text-sm":"flex-1 py-2 rounded-lg text-slate-500 font-bold text-sm";
+ document.getElementById("signupTab").className=m==="signup"?"flex-1 py-2 rounded-lg bg-white font-bold text-sm":"flex-1 py-2 rounded-lg text-slate-500 font-bold text-sm";
+ document.getElementById("authSubmit").textContent=m==="login"?"Masuk":"Buat Akun";
+ if(!isAdmin){authMsgEl.textContent="";authMsgEl.className="text-sm mt-4 text-center text-slate-500"}
+ updateSuperAdminLoginUI();
+}
 async function authSubmit(e){
  e.preventDefault();
  const email=authEmailEl.value.trim(),password=authPasswordEl.value,name=authNameEl.value.trim();
@@ -189,8 +210,10 @@ async function authSubmit(e){
  }catch(err){console.error("Auth gagal:",err);authMsgEl.textContent=err.message||"Gagal memproses autentikasi.";authMsgEl.className="text-sm mt-4 text-center text-red-600"}
 }
 document.getElementById("authForm").addEventListener("submit",authSubmit);
+authEmailEl.addEventListener("input",updateSuperAdminLoginUI);
 const savedEmail=localStorage.getItem("kp_saved_email")||"";
 if(savedEmail){authEmailEl.value=savedEmail;const rememberEl=document.getElementById("rememberEmail");if(rememberEl)rememberEl.checked=true;}
+updateSuperAdminLoginUI();
 
 function kpApplyTheme(){const dark=localStorage.getItem("kp_theme")==="dark";document.body.classList.toggle("kp-dark",dark);const b=document.getElementById("themeToggle");if(b)b.textContent=dark?"☀️":"🌙";document.documentElement.style.colorScheme=dark?"dark":"light"}
 function toggleKPTheme(){localStorage.setItem("kp_theme",localStorage.getItem("kp_theme")==="dark"?"light":"dark");kpApplyTheme()}
@@ -232,7 +255,8 @@ async function showApp(user){
  setKPGreeting(user);
  updateScopeUI();
  const accessBanner=document.getElementById("appStatus");
- if(accessBanner&&access.status==="trial"){setAppStatus("🎁 Masa GRATIS aktif — tersisa "+access.days_left+" hari. Setelah itu Rp36.000 / 30 hari.","success")}
+ if(accessBanner&&access.is_super_admin){setAppStatus("🛡️ Super Admin JFS AI — akses penuh Keuangan Pintar.","success")}
+ else if(accessBanner&&access.status==="trial"){setAppStatus("🎁 Masa GRATIS aktif — tersisa "+access.days_left+" hari. Setelah itu Rp36.000 / 30 hari.","success")}
  if(appReadyUserId===user.id)return;
  if(appInitUserId===user.id&&appInitPromise)return appInitPromise;
  appInitUserId=user.id;
