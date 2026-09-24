@@ -108,6 +108,7 @@ const client = {
       return { error: null };
     }
   },
+  async rpc(name) { if(name === "kp_get_access") return { data: { allowed: true, status: "active", is_super_admin: true, days_left: 999 }, error: null }; return { data: null, error: new Error("SIMULATED_RPC_ERROR") }; },
   from(table) {
     if (table === "kp_profiles") {
       return { upsert: async () => ({ error: null }) };
