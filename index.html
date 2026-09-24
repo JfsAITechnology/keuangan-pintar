@@ -15,7 +15,38 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script><script>
+/* Early auth guard: keeps login usable even if a later app script fails to initialize. */
+(function(){
+ const URL="https://evtkeyfjgqwarsmlzrkh.supabase.co",KEY="sb_publishable_7lGio_RVVgkVASYYyBHQIg_GvL-8ELD";
+ function boot(){
+  const form=document.getElementById("authForm"), email=document.getElementById("authEmail"), pass=document.getElementById("authPassword"), msg=document.getElementById("authMsg");
+  if(!form||!email||!pass)return;
+  const login=document.getElementById("loginTab"), signup=document.getElementById("signupTab");
+  if(login)login.type="button"; if(signup)signup.type="button";
+  const adminEmails=["johanelindahp@gmail.com","jfs.ai.technology@gmail.com"];
+  function setMsg(t,ok){if(msg){msg.textContent=t;msg.className="text-sm mt-4 text-center "+(ok?"text-emerald-600":"text-red-600");}}
+  form.addEventListener("submit",async function(e){
+   e.preventDefault(); e.stopImmediatePropagation();
+   const em=email.value.trim().toLowerCase(), pw=pass.value;
+   if(!em||!pw){setMsg("Email dan password wajib diisi.",false);return;}
+   const btn=document.getElementById("authSubmit"); if(btn)btn.disabled=true;
+   setMsg(adminEmails.includes(em)?"Memverifikasi Super Admin...":"Memverifikasi login...",true);
+   try{
+    const res=await fetch(URL+"/auth/v1/token?grant_type=password",{method:"POST",headers:{"Content-Type":"application/json","apikey":KEY},body:JSON.stringify({email:em,password:pw})});
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.error_description||data.msg||data.message||"Email atau password salah.");
+    const ref="evtkeyfjgqwarsmlzrkh";
+    localStorage.setItem("sb-"+ref+"-auth-token",JSON.stringify({access_token:data.access_token,refresh_token:data.refresh_token,expires_in:data.expires_in,expires_at:Math.floor(Date.now()/1000)+(data.expires_in||3600),token_type:data.token_type||"bearer",user:data.user}));
+    localStorage.setItem("kp_saved_email",em);
+    setMsg("Login berhasil. Membuka Keuangan Pintar...",true);
+    setTimeout(()=>location.reload(),150);
+   }catch(err){setMsg(err.message||"Login gagal.",false);if(btn)btn.disabled=false;}
+  },true);
+ }
+ if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",boot);else boot();
+})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
 body{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f8fafc}\n.kp-login-visual{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px}.kp-login-brand{display:flex;align-items:center;gap:12px}.kp-login-logo{width:76px;height:76px;object-fit:contain}.kp-login-copy h2{margin:0;font-size:21px;font-weight:950;letter-spacing:-.03em}.kp-login-copy p{margin:4px 0 0;font-size:10px;color:#64748b}.kp-finance-art{width:150px;height:96px;position:relative;display:grid;place-items:center;border-radius:22px;background:linear-gradient(145deg,#eff6ff,#ecfeff);border:1px solid #dbeafe;overflow:hidden}.kp-finance-art .coin{position:absolute;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:950;background:linear-gradient(145deg,#fde68a,#f59e0b);color:#78350f;box-shadow:0 7px 15px #f59e0b33;animation:kpCoin 2.8s ease-in-out infinite}.kp-finance-art .c1{left:18px;top:18px}.kp-finance-art .c2{right:18px;top:30px;animation-delay:.55s}.kp-finance-art .c3{left:58px;bottom:12px;animation-delay:1.05s}.kp-finance-art .chart{width:82px;height:44px;border-left:3px solid #2563eb;border-bottom:3px solid #2563eb;transform:skewY(-20deg);position:relative}.kp-finance-art .chart:after{content:"";position:absolute;left:12px;bottom:8px;width:52px;height:26px;border-top:4px solid #10b981;border-right:4px solid transparent;transform:rotate(-18deg)}@keyframes kpCoin{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-8px) rotate(8deg)}}@media(max-width:520px){.kp-login-visual{align-items:flex-start}.kp-login-logo{width:64px;height:64px}.kp-finance-art{width:118px;height:82px}.kp-finance-art .coin{width:23px;height:23px;font-size:10px}.kp-login-copy h2{font-size:18px}}
@@ -107,7 +138,7 @@ body.kp-dark .modal .bg-white{box-shadow:0 25px 80px rgba(0,0,0,.5)}
 <div id="authView" class="min-h-screen flex items-center justify-center p-4">
 <div class="w-full max-w-md bg-white rounded-3xl shadow-xl border border-slate-100 p-6">
 <div class="kp-login-visual"><div class="kp-login-brand"><img src="assets/jfs-ai-robot.svg.png?v=2" alt="JFS AI Technology" class="kp-login-logo"><div class="kp-login-copy"><h2>Keuangan Pintar</h2><p>AI Personal & Business Finance</p><p>Powered by JFS AI Technology</p></div></div><div class="kp-finance-art" aria-label="Ilustrasi keuangan pintar"><span class="chart"></span><span class="coin c1">Rp</span><span class="coin c2">+</span><span class="coin c3">Rp</span></div></div>
-<div class="flex bg-slate-100 rounded-xl p-1 mb-5"><button id="loginTab" onclick="setAuthMode('login')" class="flex-1 py-2 rounded-lg bg-white font-bold text-sm">Masuk</button><button id="signupTab" onclick="setAuthMode('signup')" class="flex-1 py-2 rounded-lg text-slate-500 font-bold text-sm">Daftar</button></div>
+<div class="flex bg-slate-100 rounded-xl p-1 mb-5"><button type="button" id="loginTab" onclick="setAuthMode('login')" class="flex-1 py-2 rounded-lg bg-white font-bold text-sm">Masuk</button><button type="button" id="signupTab" onclick="setAuthMode('signup')" class="flex-1 py-2 rounded-lg text-slate-500 font-bold text-sm">Daftar</button></div>
 <form id="authForm" class="space-y-4" onsubmit="event.preventDefault(); if(typeof authSubmit==='function'){authSubmit(event)} return false;"><div id="nameWrap" class="hidden"><label class="text-sm font-bold">Nama</label><input id="authName" class="mt-1 w-full p-3 rounded-xl border" placeholder="Nama Anda"></div><div><label class="text-sm font-bold">Email</label><input id="authEmail" type="email" required class="mt-1 w-full p-3 rounded-xl border" placeholder="nama@email.com"></div><div><label class="text-sm font-bold">Password</label><input id="authPassword" type="password" required minlength="6" class="mt-1 w-full p-3 rounded-xl border" placeholder="Minimal 6 karakter"></div><label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer"><input id="rememberEmail" type="checkbox" class="w-4 h-4 rounded" checked><span>Simpan email di perangkat ini</span></label><button id="authSubmit" class="w-full py-3.5 rounded-2xl bg-slate-900 text-white font-black">Masuk</button></form>
 <p id="authMsg" class="text-sm mt-4 text-center text-slate-500"></p><div class="mt-6 p-3 rounded-2xl bg-blue-50 text-blue-800 text-xs">Data transaksi disimpan di Supabase dan dilindungi Row Level Security berdasarkan akun Anda.</div>
 </div></div>
