@@ -41,7 +41,11 @@ const requiredSnippets = [
   'source:"manual"',
   'source:"ai"',
   'type==="income"',
-  'type==="expense"'
+  'type==="expense"',
+  'user.is_anonymous',
+  'kp_get_access',
+  'johanelindahp@gmail.com',
+  'jfs.ai.technology@gmail.com'
 ];
 
 for (const snippet of requiredSnippets) {
