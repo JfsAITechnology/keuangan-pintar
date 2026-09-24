@@ -30,7 +30,7 @@ const getEl = (id) => elements[id] ??= {
   }
 };
 
-const document = { getElementById: getEl };
+const document = { getElementById: getEl, body: { classList: { add() {}, remove() {}, toggle() {} } }, documentElement: { style: {} } };
 getEl("chart").parentElement = getEl("chartParent");
 
 const today = new Date();
