@@ -52,8 +52,8 @@ if (/service_role|sb_secret_/i.test(html)) {
   throw new Error("Secret/service-role credential found in browser code.");
 }
 
-if (!sw.includes('keuangan-pintar-v5')) {
-  throw new Error("Service Worker cache version was not bumped to v5.");
+if (!sw.includes('keuangan-pintar-v6')) {
+  throw new Error("Service Worker cache version was not bumped to v6.");
 }
 
 console.log("Keuangan Pintar static validation: PASS");
