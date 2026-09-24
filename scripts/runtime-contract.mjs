@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 const html = readFileSync("index.html", "utf8");
 const appScript = [...html.matchAll(/<script>([\s\S]*?)<\/script>/gi)]
   .map((m) => m[1])
-  .find((s) => s.trim());
+  .find((s) => s.includes("function openEntry("));
 
 assert.ok(appScript, "Main inline application script was not found.");
 
