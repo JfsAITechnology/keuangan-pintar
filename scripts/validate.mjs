@@ -29,7 +29,7 @@ const requiredIds = [
 ];
 
 for (const id of requiredIds) {
-  const pattern = new RegExp(`id=["']${id.replace(/[.*+?^{}()|[\\]\\\\]/g, "\\\\$&")}["']`);
+  const pattern = new RegExp(`id=["']${id.replace(/[.*+?^${}()|[\\]\\\\]/g, "\\\\$&")}["']`);
   if (!pattern.test(html)) throw new Error(`Missing required DOM id: ${id}`);
 }
 
@@ -42,14 +42,20 @@ const requiredSnippets = [
   'source:"ai"',
   'type==="income"',
   'type==="expense"',
-  'user.is_anonymous',
   'kp_get_access',
   'johanelindahp@gmail.com',
-  'jfs.ai.technology@gmail.com'
+  'jfs.ai.technology@gmail.com',
+  '/auth/v1/token?grant_type=password',
+  'sb.auth.signInWithPassword',
+  'localStorage.setItem("kp_saved_email",em)'
 ];
 
 for (const snippet of requiredSnippets) {
   if (!html.includes(snippet)) throw new Error(`Missing critical runtime guard/snippet: ${snippet}`);
+}
+
+if (/localStorage\.setItem\(\s*["'](?:password|kp_saved_password)["']/i.test(html)) {
+  throw new Error("Password persistence detected in browser code.");
 }
 
 if (/service_role|sb_secret_/i.test(html)) {
