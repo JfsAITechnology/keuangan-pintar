@@ -16,6 +16,7 @@ const getEl = (id) => elements[id] ??= {
   innerHTML: "",
   disabled: false,
   className: "",
+  style: {},
   classList: { add() {}, remove() {}, toggle() {} },
   listeners: {},
   parentElement: null,
