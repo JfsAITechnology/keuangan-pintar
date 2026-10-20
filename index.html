@@ -27,6 +27,8 @@
   const adminEmails=["johanelindahp@gmail.com","jfs.ai.technology@gmail.com"];
   function setMsg(t,ok){if(msg){msg.textContent=t;msg.className="text-sm mt-4 text-center "+(ok?"text-emerald-600":"text-red-600");}}
   form.addEventListener("submit",async function(e){
+   /* Signup must reach the normal Supabase signUp handler below. */
+   if((document.getElementById("authSubmit")?.textContent||"").trim()==="Buat Akun")return;
    e.preventDefault(); e.stopImmediatePropagation();
    const em=email.value.trim().toLowerCase(), pw=pass.value;
    if(!em||!pw){setMsg("Email dan password wajib diisi.",false);return;}
