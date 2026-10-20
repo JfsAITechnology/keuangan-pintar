@@ -234,7 +234,7 @@ async function authSubmit(e){
  try{
   const r=authMode==="login"
    ?await sb.auth.signInWithPassword({email,password})
-   :await sb.auth.signUp({email,password,options:{data:{display_name:name}}});
+   :await sb.auth.signUp({email,password,options:{emailRedirectTo:"https://jfsaitechnology.github.io/keuangan-pintar/",data:{display_name:name}}});
   if(r.error)throw r.error;
   if(authMode==="signup"&&!r.data.session){authMsgEl.textContent="Akun dibuat. Jika konfirmasi email aktif, cek email lalu masuk.";authMsgEl.className="text-sm mt-4 text-center text-emerald-600";return}
   if(!r.data.user)throw new Error("Akun tidak dikembalikan oleh layanan autentikasi.");
