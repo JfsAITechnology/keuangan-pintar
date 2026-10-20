@@ -155,11 +155,11 @@ body.kp-dark .modal .bg-white{box-shadow:0 25px 80px rgba(0,0,0,.5)}
 <section class="kp-balance-card"><div class="kp-balance-top"><div><div class="kp-card-label">💳 TOTAL SALDO TERCATAT</div><div class="kp-muted-light">Pemasukan − pengeluaran pada periode berjalan</div></div><div class="kp-balance-badge">● LIVE</div></div><div id="balance" class="kp-balance-value">Rp0</div><div class="kp-balance-actions"><button onclick="openEntry('income')">＋ Pemasukan</button><button onclick="openEntry('expense')">− Pengeluaran</button><button onclick="openAnalysis()">📊 Analisis AI</button></div></section>
 <section class="kp-insight-card"><div class="kp-section-head"><div><span class="kp-icon-orb">💡</span><div><h2>AI INSIGHTS</h2><p>Rekomendasi otomatis berdasarkan transaksi Anda</p></div></div><span class="kp-ai-pill">JFS AI</span></div><div id="aiInsightText" class="kp-insight-text">JFS AI sedang membaca pola keuangan Anda...</div><div class="kp-insight-actions"><button onclick="openAskAI()" class="kp-primary-mini">Tanya JFS AI</button><button onclick="openHistory()" class="kp-secondary-mini">Lihat Tren</button></div></section>
 <section class="kp-grid-two"><div class="kp-panel"><div class="kp-panel-head"><div><h2>📈 Arus Kas</h2><p>Bulan ini</p></div><span class="kp-trend">● Live</span></div><div class="kp-flow-row"><div><span>Masuk</span><strong id="income">Rp0</strong></div><div><span>Keluar</span><strong id="expense">Rp0</strong></div></div><div class="kp-mini-chart"><canvas id="chart"></canvas></div><button onclick="openHistory()" class="kp-text-btn">Lihat rincian →</button></div>
-<div class="kp-panel"><div class="kp-panel-head"><div><h2>🎯 Target Keuangan</h2><p>Simulasi target</p></div><span class="kp-target-icon">↗</span></div><div class="kp-target"><div class="kp-target-line"><span>🏖️ Dana Liburan</span><b>Atur target</b></div><div class="kp-progress"><i style="width:0%"></i></div><small>Belum ada target tersimpan</small></div><div class="kp-target"><div class="kp-target-line"><span>🛡️ Dana Darurat</span><b>Atur target</b></div><div class="kp-progress"><i style="width:0%"></i></div><small>Simulasi tersedia setelah target dibuat</small></div><button onclick="openSmartCalculator()" class="kp-smart-btn">🧮 Buka Kalkulator Cerdas</button></div></section>
+<div class="kp-panel"><div class="kp-panel-head"><div><h2>🎯 Target Keuangan</h2><p>Tersimpan per akun &amp; mode di perangkat ini</p></div><span class="kp-target-icon">↗</span></div><div class="kp-target"><div class="kp-target-line"><span>🏖️ Dana Liburan</span><button type="button" class="kp-text-btn" onclick="configureGoal('vacation')">Atur target</button></div><div class="kp-progress"><i id="goalVacationProgress" style="width:0%"></i></div><small id="goalVacationStatus">Belum ada target tersimpan</small></div><div class="kp-target"><div class="kp-target-line"><span>🛡️ Dana Darurat</span><button type="button" class="kp-text-btn" onclick="configureGoal('emergency')">Atur target</button></div><div class="kp-progress"><i id="goalEmergencyProgress" style="width:0%"></i></div><small id="goalEmergencyStatus">Belum ada target tersimpan</small></div><button onclick="openSmartCalculator()" class="kp-smart-btn">🧮 Buka Kalkulator Cerdas</button></div></section>
 <section class="kp-transactions"><div class="kp-panel-head"><div><h2>🧾 Transaksi Terbaru</h2><p>Otomatis dikategorikan oleh AI saat sumbernya AI</p></div><button id="refreshBtn" onclick="refreshTransactions()" class="kp-refresh">↻</button></div><div id="transactions" class="kp-tx-list"></div></section>
 <section class="kp-quick-grid"><button onclick="openChatBookkeeper()" class="kp-quick kp-quick-ai"><span>💬</span><div><b>Ceritakan ke JFS AI</b><small>Teks biasa → transaksi</small></div><em>→</em></button><button onclick="openScanner()" class="kp-quick"><span>📷</span><div><b>Scan Struk AI</b><small>Foto → data transaksi</small></div><em>→</em></button><button onclick="openHistory()" class="kp-quick"><span>📅</span><div><b>Histori</b><small>Semua transaksi</small></div><em>→</em></button><button onclick="openExport()" class="kp-quick"><span>📊</span><div><b>Laporan</b><small>PDF & Excel</small></div><em>→</em></button></section>
 <div id="dailyBreakdown" class="hidden"></div></main>
-<nav class="kp-bottom-nav"><div><button class="active"><span>⌂</span>Beranda</button><button onclick="openHistory()"><span>📈</span>Statistik</button><button onclick="openChatBookkeeper()"><span><img src="assets/jfs-ai-robot.svg.png?v=2" alt="JFS AI" style="width:20px;height:20px;object-fit:contain;margin:auto"></span>AI Chat</button><button onclick="openEntry('expense')"><span>＋</span>Tambah</button></div></nav>
+<nav class="kp-bottom-nav"><div><button id="navHome" class="active" type="button" onclick="goHome()"><span>⌂</span>Beranda</button><button id="navStats" onclick="openHistory()"><span>📈</span>Statistik</button><button id="navChat" onclick="openChatBookkeeper()"><span><img src="assets/jfs-ai-robot.svg.png?v=2" alt="JFS AI" style="width:20px;height:20px;object-fit:contain;margin:auto"></span>AI Chat</button><button id="navAdd" onclick="openEntry('expense')"><span>＋</span>Tambah</button></div></nav>
 </div>
 
 
@@ -294,7 +294,7 @@ async function showApp(user){
  if(appInitUserId===user.id&&appInitPromise)return appInitPromise;
  appInitUserId=user.id;
  appInitPromise=(async()=>{await ensureProfile(user);await loadTransactions()})();
- try{await appInitPromise;appReadyUserId=user.id}
+ try{await appInitPromise;appReadyUserId=user.id;renderGoals()}
  finally{if(appInitUserId===user.id){appInitPromise=null}}
 }
 async function ensureProfile(user){
@@ -337,7 +337,7 @@ function render(){
  const currentMonth=todayISO().slice(0,7);
  const monthTx=transactions.filter(x=>String(x.transaction_date||"").slice(0,7)===currentMonth);
  let inc=monthTx.filter(x=>x.type==="income").reduce((a,x)=>a+Number(x.amount),0),exp=monthTx.filter(x=>x.type==="expense").reduce((a,x)=>a+Number(x.amount),0);
- balanceEl.textContent=rupiah(inc-exp);incomeEl.textContent=rupiah(inc);expenseEl.textContent=rupiah(exp);transactionsEl(monthTx);renderDailyBreakdown(monthTx);renderChart(monthTx);renderAIInsight(monthTx,inc,exp);
+ balanceEl.textContent=rupiah(inc-exp);incomeEl.textContent=rupiah(inc);expenseEl.textContent=rupiah(exp);transactionsEl(monthTx);renderDailyBreakdown(monthTx);renderChart(monthTx);renderAIInsight(monthTx,inc,exp);renderGoals();
 }
 function renderAIInsight(monthTx,inc,exp){const el=document.getElementById("aiInsightText");if(!el)return;if(!monthTx.length){el.textContent="Belum ada transaksi bulan ini. Ceritakan transaksi pertama Anda dan JFS AI akan mulai membaca pola keuangan.";return}const byCat={};monthTx.filter(x=>x.type==="expense").forEach(x=>byCat[x.category]=(byCat[x.category]||0)+Number(x.amount));const top=Object.entries(byCat).sort((a,b)=>b[1]-a[1])[0];const net=inc-exp;if(exp>inc&&inc>0)el.textContent="Pengeluaran bulan ini lebih besar daripada pemasukan. JFS AI menyarankan meninjau transaksi terbesar sebelum menambah pengeluaran.";else if(top)el.textContent="Kategori pengeluaran terbesar bulan ini adalah "+top[0]+" sebesar "+rupiah(top[1])+". Mau JFS AI bantu membaca trennya?";else el.textContent="Arus kas bulan ini masih positif sebesar "+rupiah(net)+". JFS AI siap membantu menemukan pola yang bisa dioptimalkan.";}
 function transactionsEl(monthTx){const el=document.getElementById("transactions");if(!monthTx.length){el.innerHTML='<div class="bg-white border rounded-3xl p-8 text-center text-sm text-slate-500">Belum ada transaksi pada bulan ini.</div>';return}el.innerHTML=monthTx.map(x=>{let plus=x.type==="income";return '<div class="bg-white border rounded-2xl p-4 flex items-center gap-3"><div class="w-11 h-11 rounded-xl grid place-items-center '+(plus?"bg-emerald-50 text-emerald-600":"bg-red-50 text-red-600")+'">'+(plus?"↗":"↘")+'</div><div class="min-w-0 flex-1"><div class="font-bold truncate">'+esc(x.merchant||x.description||x.category)+'</div><div class="flex gap-2 items-center mt-1 flex-wrap"><span class="text-[11px] bg-slate-100 px-2 py-1 rounded-lg">'+esc(x.category)+'</span><span class="text-[11px] text-slate-400">'+dateFmt(x.transaction_date)+'</span>'+(x.source!=="manual"?'<span class="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded-lg">AI</span>':"")+'</div></div><div class="font-black whitespace-nowrap '+(plus?"text-emerald-600":"text-red-600")+'">'+(plus?"+":"-")+rupiah(x.amount)+'</div></div>'}).join("")}
@@ -373,6 +373,41 @@ function openAskAI(){
 }
 function openSmartCalculator(){const m=document.getElementById("calculatorModal");if(!m)return;m.classList.remove("hidden");m.classList.add("flex");setTimeout(()=>document.getElementById("calcTarget")?.focus(),100)}
 function calculateSmartTarget(){const target=parseMoneySmart(document.getElementById("calcTarget")?.value),current=parseMoneySmart(document.getElementById("calcCurrent")?.value),months=Math.max(1,Number(document.getElementById("calcMonths")?.value)||1),gap=Math.max(0,target-current),monthly=Math.ceil(gap/months);document.getElementById("calcResult").innerHTML='<div class="rounded-2xl bg-blue-50 p-4"><div class="text-xs text-blue-700">Kebutuhan tabungan per bulan</div><div class="text-2xl font-black text-blue-800">'+rupiah(monthly)+'</div><div class="text-xs text-slate-500 mt-2">Kekurangan menuju target: '+rupiah(gap)+' dalam '+months+' bulan.</div></div>'}
+
+function kpGoalKey(){return appReadyUserId?"kp_goals_v1_"+appReadyUserId+"_"+scope:null}
+function readKpGoals(){const key=kpGoalKey();if(!key)return {};try{return JSON.parse(localStorage.getItem(key)||"{}")||{}}catch(_){return {}}}
+function renderGoals(){
+ const goals=readKpGoals();
+ for(const [kind,prefix] of [["vacation","goalVacation"],["emergency","goalEmergency"]]){
+  const goal=goals[kind],bar=document.getElementById(prefix+"Progress"),status=document.getElementById(prefix+"Status");
+  if(!bar||!status)continue;
+  if(!goal||!Number(goal.target)){bar.style.width="0%";status.textContent="Belum ada target tersimpan";continue}
+  const target=Math.max(0,Number(goal.target)||0),current=Math.max(0,Number(goal.current)||0),percent=target?Math.min(100,Math.round(current/target*100)):0,months=Math.max(1,Number(goal.months)||1),monthly=Math.ceil(Math.max(0,target-current)/months);
+  bar.style.width=percent+"%";
+  status.textContent=rupiah(current)+" dari "+rupiah(target)+" ("+percent+"%) • Sisihkan "+rupiah(monthly)+"/bulan";
+ }
+}
+function configureGoal(kind){
+ const key=kpGoalKey();if(!key){alert("Sesi pengguna belum siap. Silakan tunggu sebentar lalu coba lagi.");return false}
+ if(!["vacation","emergency"].includes(kind))return false;
+ const goals=readKpGoals(),old=goals[kind]||{},name=kind==="vacation"?"Dana Liburan":"Dana Darurat";
+ const targetText=prompt("Nominal target "+name+" (Rp):",old.target?String(old.target):"");
+ if(targetText===null)return false;
+ const target=parseMoneySmart(targetText);if(target<=0){alert("Target harus lebih besar dari Rp0.");return false}
+ const currentText=prompt("Dana yang sudah terkumpul (Rp):",old.current?String(old.current):"0");
+ if(currentText===null)return false;
+ const current=parseMoneySmart(currentText);if(current<0){alert("Dana terkumpul tidak valid.");return false}
+ const monthsText=prompt("Berapa bulan menuju target?",String(old.months||12));
+ if(monthsText===null)return false;
+ const months=Number(monthsText);if(!Number.isInteger(months)||months<1||months>600){alert("Masukkan waktu 1–600 bulan.");return false}
+ try{goals[kind]={target,current,months};localStorage.setItem(key,JSON.stringify(goals));renderGoals();return true}
+ catch(error){alert("Target tidak dapat disimpan di perangkat ini.");console.error("Gagal menyimpan target:",error);return false}
+}
+function goHome(){
+ ["entryModal","historyModal","exportModal","calculatorModal","scannerModal","chatBookkeeperModal"].forEach(id=>{const modal=document.getElementById(id);if(modal)closeModal(id)});
+ for(const id of ["navHome","navStats","navChat","navAdd"]){const button=document.getElementById(id);if(button)button.classList.toggle("active",id==="navHome")}
+ window.scrollTo?.(0,0);
+}
 function openChatBookkeeper(){const modal=document.getElementById("chatBookkeeperModal");modal.classList.remove("hidden");modal.classList.add("flex");const title=modal.querySelector("h2"),sub=modal.querySelector("p"),input=document.getElementById("chatBookkeeperInput"),send=document.getElementById("chatBookkeeperSend");if(title)title.textContent="💬 JFS AI Bookkeeper";if(sub)sub.textContent="Anda bercerita, JFS AI yang mencatat.";if(input)input.placeholder="Ceritakan transaksi Anda...";if(send)send.textContent="🤖 Analisis & Catat";setTimeout(()=>input?.focus(),100)}
 function renderChatMessage(text,who="ai"){const el=document.getElementById("chatMessages");if(!el)return;const div=document.createElement("div");div.className=who==="user"?"p-3 rounded-2xl bg-blue-50 text-sm ml-8":"p-3 rounded-2xl bg-slate-50 text-sm mr-8";div.textContent=text;el.appendChild(div);el.scrollTop=el.scrollHeight}
 function showChatBookkeeperResult(v){
