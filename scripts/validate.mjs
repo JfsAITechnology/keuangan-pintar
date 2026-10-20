@@ -23,7 +23,8 @@ try {
 
 const requiredIds = [
   "authView","authForm","authEmail","authPassword","authSubmit","appView",
-  "appStatus","balance","income","expense","monthLabel","transactions",
+  "appStatus","balance","income","expense","monthLabel","transactions","navHome",
+  "goalVacationProgress","goalVacationStatus","goalEmergencyProgress","goalEmergencyStatus",
   "dailyBreakdown","chart","entryForm","saveEntryBtn","entryAmount",
   "entryCategory","entryDate","scannerModal","receipt","ocrResult"
 ];
@@ -47,7 +48,12 @@ const requiredSnippets = [
   'jfs.ai.technology@gmail.com',
   '/auth/v1/token?grant_type=password',
   'sb.auth.signInWithPassword',
-  'localStorage.setItem("kp_saved_email",em)'
+  'localStorage.setItem("kp_saved_email",em)',
+  "function goHome()",
+  "function configureGoal(kind)",
+  "function renderGoals()",
+  "kp_goals_v1_",
+  'onclick="goHome()'
 ];
 
 for (const snippet of requiredSnippets) {
